@@ -2,12 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------- Base Styles ---------- */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
   margin: 0;
   font-family: "Plus Jakarta Sans", sans-serif;
   background: #FDFBF7;
   color: #231812;
+  overflow: hidden;
 }
 
+/* Smooth scrolling for all scrollable containers */
+html, body, [class*="overflow"] {
+  scroll-behavior: smooth;
+}
+
+/* ---------- Scrollbar ---------- */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+/* Custom styled scrollbar for pages */
+.styled-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(232, 74, 39, 0.2);
+  border-radius: 999px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 74, 39, 0.4);
+}
+
+/* ---------- Selection Color ---------- */
+::selection {
+  background: rgba(232, 74, 39, 0.2);
+  color: #231812;
+}
+
+/* ---------- Focus Ring ---------- */
+*:focus-visible {
+  outline: 2px solid rgba(232, 74, 39, 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Image Loading ---------- */
+img {
+  transition: opacity 0.3s ease;
+}
+
+img[loading] {
+  opacity: 0;
+}
+
+img:not([loading]) {
+  opacity: 1;
+}
+
+/* ---------- Link Underlines ---------- */
+a {
+  text-decoration-skip-ink: auto;
+}
+
+/* ---------- Transition Defaults ---------- */
+button, a, input, [role="button"] {
+  transition: all 0.2s ease;
+}
+
+/* ---------- Material Icons Fix for Animations ---------- */
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  transition: font-variation-settings 0.2s ease;
+}
+
+/* Filled variant on active/hover states */
+.icon-filled .material-symbols-outlined,
+.group:hover .material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+@layer utilities {
+  /* Stagger delay utilities for Tailwind */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+  .delay-600 { animation-delay: 600ms; }
+  .delay-700 { animation-delay: 700ms; }
+}

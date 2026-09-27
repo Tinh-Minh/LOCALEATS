@@ -17,7 +17,7 @@ export default function VIPPage() {
   const listRestaurants = vipRestaurants.slice(2);
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar bg-[#FDFBF7]">
+    <div className="flex-1 overflow-y-auto no-scrollbar bg-[#FDFBF7] page-enter">
       {/* Warning banner */}
       <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-2 flex items-center gap-3">
         <span className="material-symbols-outlined text-[16px] text-yellow-600">warning</span>
@@ -42,9 +42,9 @@ export default function VIPPage() {
           </div>
         </div>
 
-        <h1 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1">
+        <h1 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1 animate-fadeIn">
           Đặc Quyền Hội Viên &{" "}
-          <span className="text-[#E84A27]">Quán Tài Trợ Nổi Bật</span>
+          <span className="gradient-text-premium">Quán Tài Trợ Nổi Bật</span>
         </h1>
         <p className="text-[13px] text-gray-600 mb-4 max-w-2xl">
           Khám phá các nhà hàng cao cấp, quán ăn được yêu thích nhất tuần kèm voucher giảm giá tới 50% dành riêng cho thành viên LOCALEATS VIP. Tận hưởng hướng vị đỉnh cao cùng dịch vụ ưu đãi để bạn giữ chỗ ưu tiên.
@@ -81,7 +81,7 @@ export default function VIPPage() {
         </div>
 
         {/* Daily VIP Vouchers */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+        <div className="glass-card rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 hover-lift animate-slideInUp">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-[18px]">🎟️</span>
@@ -145,7 +145,7 @@ export default function VIPPage() {
 
           <div className="grid grid-cols-2 gap-4">
             {spotlightRestaurants.map((r, i) => (
-              <div key={r.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+              <div key={r.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all group hover-lift card-shine">
                 {/* Image */}
                 <div className="relative h-40 overflow-hidden">
                   <img src={r.image} alt={r.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -181,7 +181,7 @@ export default function VIPPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <button className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-full bg-[#E84A27] text-white text-[11px] font-bold shadow-md hover:bg-[#c93d1f] transition-all hover:scale-[1.02]">
+                    <button className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-full bg-[#E84A27] text-white text-[11px] font-bold shadow-md hover:bg-[#c93d1f] transition-all hover:scale-[1.02] btn-press glow-primary-hover">
                       <span className="material-symbols-outlined text-[14px]">loyalty</span>
                       Lấy mã ưu đãi ngay
                     </button>
@@ -213,7 +213,7 @@ export default function VIPPage() {
 
           <div className="grid grid-cols-3 gap-4">
             {listRestaurants.map((r) => (
-              <div key={r.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+              <div key={r.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all group hover-lift card-shine">
                 <div className="relative h-36 overflow-hidden">
                   <img src={r.image} alt={r.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   {/* Discount badge */}
@@ -274,7 +274,7 @@ export default function VIPPage() {
         </div>
 
         {/* VIP Commitment section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover-lift animate-slideInUp" style={{ animationDelay: '0.3s' }}>
           <div className="flex items-center gap-2 mb-1">
             <span className="material-symbols-outlined text-[18px] text-green-500">verified</span>
             <h3 className="font-bold text-[14px] text-gray-800">QUY CHUẨN KIỂM ĐỊNH NGHIÊM NGẶT</h3>

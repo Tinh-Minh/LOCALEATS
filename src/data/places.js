@@ -94,11 +94,14 @@ export const filterChips = [
 ];
 
 export const sidebarItems = [
-  { id: "map",     label: "Bản đồ HOT",     path: "/",       icon: "map",         badge: "LIVE" },
-  { id: "hotlist", label: "Bảng xếp hạng",  path: "/hotlist",icon: "leaderboard", badge: null },
-  { id: "ai",      label: "AI Gợi Ý",       path: "/ai",     icon: "auto_awesome",badge: "SMART" },
-  { id: "vip",     label: "VIP & Ưu đãi",   path: "/vip",    icon: "diamond",     badge: "MỚI" },
-  { id: "saved",   label: "Đã lưu",         path: "/saved",  icon: "bookmark",    badge: null },
+  { id: "nearby",    label: "Quanh đây & Xu hướng",         path: "/",          icon: "explore",          badge: null },
+  { id: "vip",       label: "Quán Tài Trợ & Ưu đãi VIP",   path: "/vip",       icon: "card_giftcard",    badge: "VIP",   badgeStyle: "vip" },
+  { id: "hot",       label: "Đang HOT",                     path: "/hotlist",   icon: "local_fire_department", badge: "BÙNG NỔ", badgeStyle: "hot" },
+  { id: "ai",        label: "AI Gợi ý món ăn",              path: "/ai",        icon: "auto_awesome",     badge: "SMART", badgeStyle: "smart" },
+  { id: "review",    label: "Góc Review",                    path: "/review",    icon: "rate_review",      badge: "MỚI",   badgeStyle: "new" },
+  { id: "direction", label: "Tìm đường đa phương tiện",     path: "/direction", icon: "directions",       badge: null },
+  { id: "saved",     label: "Bộ sưu tập yêu thích",         path: "/saved",     icon: "collections_bookmark", badge: null },
+  { id: "live",      label: "Mức độ sôi động Live",         path: "/live",      icon: "cell_tower",       badge: null },
 ];
 
 export const trendingFoods = [

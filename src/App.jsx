@@ -15,7 +15,7 @@ export default function App() {
         <Navbar />
 
         {/* Body: sidebar + content */}
-        <div className="flex flex-1 overflow-hidden pt-14">
+        <div className="flex flex-1 overflow-hidden pt-16">
           <Sidebar />
           <main className="flex-1 flex overflow-hidden">
             <Routes>

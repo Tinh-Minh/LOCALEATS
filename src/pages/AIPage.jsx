@@ -24,11 +24,11 @@ export default function AIPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar bg-[#FDFBF7]">
+    <div className="flex-1 overflow-y-auto no-scrollbar bg-[#FDFBF7] page-enter">
       <div className="max-w-5xl mx-auto px-6 py-6">
         {/* AI badge */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex items-center gap-1.5 bg-green-100 text-green-700 text-[11px] font-bold px-2.5 py-1 rounded-full">
+        <div className="flex items-center gap-2 mb-3 animate-fadeIn">
+          <div className="flex items-center gap-1.5 bg-green-100 text-green-700 text-[11px] font-bold px-2.5 py-1 rounded-full animate-pulse">
             <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
             AI SMART SOMMELIER
           </div>
@@ -40,10 +40,10 @@ export default function AIPage() {
         </div>
 
         {/* Main headline */}
-        <h1 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1">
+        <h1 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1 animate-slideInUp">
           Hôm nay bạn muốn ăn gì?
         </h1>
-        <h2 className="text-[28px] font-extrabold text-[#E84A27] leading-tight mb-3">
+        <h2 className="text-[28px] font-extrabold leading-tight mb-3 gradient-text-premium">
           Để AI LOCALEATS thấu hiểu khẩu vị của bạn!
         </h2>
         <p className="text-[13px] text-gray-600 mb-5 max-w-2xl">
@@ -51,7 +51,7 @@ export default function AIPage() {
         </p>
 
         {/* AI prompt input */}
-        <div className="bg-white border-2 border-orange-200 rounded-2xl p-4 mb-4 shadow-sm">
+        <div className="glass-card border-2 border-orange-200 rounded-2xl p-4 mb-4 animate-slideInUp" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
               <span className="material-symbols-outlined text-[18px] text-[#E84A27]">place</span>
@@ -64,7 +64,7 @@ export default function AIPage() {
             </button>
             <button
               onClick={() => setShowResult(true)}
-              className="flex items-center gap-1.5 bg-[#E84A27] text-white px-4 py-2 rounded-full text-[12px] font-bold shadow-md shadow-[#E84A27]/30 hover:bg-[#c93d1f] transition-all hover:scale-105 whitespace-nowrap"
+              className="flex items-center gap-1.5 bg-[#E84A27] text-white px-4 py-2 rounded-full text-[12px] font-bold shadow-md shadow-[#E84A27]/30 hover:bg-[#c93d1f] transition-all hover:scale-105 whitespace-nowrap btn-press glow-primary-hover"
             >
               <span className="material-symbols-outlined text-[16px]">send</span>
               Gợi Ý Tức Thì
@@ -93,7 +93,7 @@ export default function AIPage() {
         </div>
 
         {/* Taste Matrix */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 hover-lift animate-slideInUp" style={{ animationDelay: '0.15s' }}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-[15px] text-gray-900">📊 Ma Trận Khẩu Vị & Cảm Xúc (Taste Matrix)</h3>
             <span className="text-[11px] text-gray-500">Đang quét 482 quán mở cửa tại Hà Nội / TP.HCM</span>
@@ -142,7 +142,7 @@ export default function AIPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
               {aiDishes.map((dish) => (
-                <div key={dish.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+                <div key={dish.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all group hover-lift card-shine">
                   {/* Status bar */}
                   <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 border-b border-gray-100">
                     <span className="flex items-center gap-1 text-[10px] font-bold text-green-600">
@@ -190,7 +190,7 @@ export default function AIPage() {
 
                   {/* Buttons */}
                   <div className="flex gap-2 px-3 pb-3 mt-1">
-                    <button className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-full bg-[#E84A27] text-white text-[11px] font-bold shadow-md hover:bg-[#c93d1f] transition-all hover:scale-[1.02]">
+                    <button className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-full bg-[#E84A27] text-white text-[11px] font-bold shadow-md hover:bg-[#c93d1f] transition-all hover:scale-[1.02] btn-press glow-primary-hover">
                       <span className="material-symbols-outlined text-[14px]">directions</span>
                       Chỉ đường ngay ({dish.distanceKm}km)
                     </button>
@@ -204,7 +204,7 @@ export default function AIPage() {
             </div>
 
             {/* Lucky spin */}
-            <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-5 mb-8">
+            <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-5 mb-8 hover-lift relative overflow-hidden animate-slideInUp" style={{ animationDelay: '0.2s' }}>
               <div className="flex items-start gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -226,7 +226,7 @@ export default function AIPage() {
                       <p className="text-[10px] text-gray-500">Tỉ lệ thỏa sau khi thử</p>
                     </div>
                   </div>
-                  <button className="mt-3 flex items-center gap-2 bg-[#E84A27] text-white px-5 py-2.5 rounded-full font-bold text-[13px] shadow-lg shadow-[#E84A27]/30 hover:bg-[#c93d1f] transition-all hover:scale-105 animate-pulse">
+                  <button className="mt-3 flex items-center gap-2 bg-[#E84A27] text-white px-5 py-2.5 rounded-full font-bold text-[13px] shadow-lg shadow-[#E84A27]/30 hover:bg-[#c93d1f] transition-all hover:scale-105 animate-glow btn-press">
                     🎰 BỐC QUẺ MÓN ĂN NGAY!
                   </button>
                 </div>
@@ -276,7 +276,7 @@ export default function AIPage() {
                   { cat: "Healthy & Detox", name: "Sinh Tố Mắc Hoa Quả & Sữa Chua Lắc", trend: "+120% Tuần này", desc: "Gộp quả từ 11:00 đến 23:00 tại cả, ổng sầu quả đất gĩ nhẹ mà niêu đất lộc cây nước từ đây ăn bản ngon nhất...", nearby: 42, icon: "🥤" },
                   { cat: "Lẩu & Âm thực", name: "Lẩu Riêu Cua Băp Bò Sườn Sụn Hà Nội", trend: "+44% Tuần này", desc: "Chuẩn VN định hướng ẩm thực điển hình phong phú đang được ưa chuộng lần xuất hiện đầu tháng...", nearby: 19, icon: "🍲" },
                 ].map((t) => (
-                  <div key={t.name} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div key={t.name} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all hover-lift card-shine">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-[20px]">{t.icon}</span>
                       <span className="text-[10px] font-bold text-gray-500 uppercase">{t.cat}</span>
