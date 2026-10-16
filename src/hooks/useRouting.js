@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 const OSRM_BASE = "https://router.project-osrm.org/route/v1";
 
@@ -95,72 +95,79 @@ export default function useRouting() {
 
   // Cache for real GPS position (avoid asking repeatedly)
   const gpsCache = useRef(null);
+  const gpsPending = useRef(null);
 
   // Default fallback location (HCM City center - near Bến Thành)
   const FALLBACK = { lat: 10.7769, lng: 106.7009 };
 
-  // Get user's current location - prioritizes real GPS
+  // Get user's current location - shares a single GPS promise to avoid duplicate requests
   const getUserLocation = useCallback(() => {
-    return new Promise((resolve) => {
-      // If we already got a real GPS position recently (<30s), reuse it
-      if (gpsCache.current && (Date.now() - gpsCache.current.timestamp) < 30000) {
-        console.log("[Routing] Using cached GPS position:", gpsCache.current.loc);
-        setUserLocation(gpsCache.current.loc);
-        setLocationStatus(LOC_STATUS.GPS_OK);
-        resolve(gpsCache.current.loc);
-        return;
-      }
+    // If we already got a real GPS position recently (<60s), reuse it
+    if (gpsCache.current && (Date.now() - gpsCache.current.timestamp) < 60000) {
+      console.log("[Routing] Using cached GPS position:", gpsCache.current.loc);
+      setUserLocation(gpsCache.current.loc);
+      setLocationStatus(LOC_STATUS.GPS_OK);
+      return Promise.resolve(gpsCache.current.loc);
+    }
 
-      if (!navigator.geolocation) {
-        console.warn("[Routing] Geolocation API not available in this browser");
-        setLocationStatus(LOC_STATUS.UNAVAILABLE);
-        setUserLocation(FALLBACK);
-        resolve(FALLBACK);
-        return;
-      }
+    // If a GPS request is already in progress, reuse the same promise
+    if (gpsPending.current) {
+      console.log("[Routing] Reusing existing GPS request...");
+      return gpsPending.current;
+    }
 
-      setLocationStatus(LOC_STATUS.PENDING);
-      console.log("[Routing] Requesting GPS position from browser...");
+    if (!navigator.geolocation) {
+      console.warn("[Routing] Geolocation API not available");
+      setLocationStatus(LOC_STATUS.UNAVAILABLE);
+      setUserLocation(FALLBACK);
+      return Promise.resolve(FALLBACK);
+    }
 
+    setLocationStatus(LOC_STATUS.PENDING);
+    console.log("[Routing] Requesting GPS position from browser...");
+
+    gpsPending.current = new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          console.log("[Routing] ✅ Got real GPS location:", loc, "accuracy:", pos.coords.accuracy, "m");
+          console.log("[Routing] ✅ Got real GPS:", loc, "accuracy:", pos.coords.accuracy, "m");
           gpsCache.current = { loc, timestamp: Date.now() };
           setUserLocation(loc);
           setLocationStatus(LOC_STATUS.GPS_OK);
+          gpsPending.current = null;
           resolve(loc);
         },
         (err) => {
           console.warn("[Routing] ❌ GPS error:", err.code, err.message);
-          
           let status;
           if (err.code === 1) {
-            // PERMISSION_DENIED
             status = LOC_STATUS.DENIED;
-            console.warn("[Routing] User denied GPS permission → using fallback (Bến Thành, HCM)");
           } else if (err.code === 2) {
-            // POSITION_UNAVAILABLE
             status = LOC_STATUS.UNAVAILABLE;
-            console.warn("[Routing] GPS position unavailable → using fallback");
           } else {
-            // TIMEOUT or unknown
             status = LOC_STATUS.FALLBACK;
-            console.warn("[Routing] GPS timeout → using fallback");
           }
-
           setLocationStatus(status);
           setUserLocation(FALLBACK);
+          gpsPending.current = null;
           resolve(FALLBACK);
         },
         {
           enableHighAccuracy: true,
-          timeout: 15000,     // 15 seconds - give GPS more time
-          maximumAge: 30000,  // 30 seconds cache - fresher position
+          timeout: 20000,     // 20 seconds - more time for first GPS fix
+          maximumAge: 60000,  // 60 seconds cache
         }
       );
     });
+
+    return gpsPending.current;
   }, []);
+
+  // Pre-fetch GPS location on mount — so position is ready when user clicks "Chỉ đường"
+  useEffect(() => {
+    console.log("[Routing] Pre-fetching GPS location on mount...");
+    getUserLocation();
+  }, [getUserLocation]);
 
   // Fetch route from OSRM
   const startRoute = useCallback(async (destination, mode = transportMode) => {

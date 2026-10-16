@@ -40,6 +40,18 @@ export default function MapPage() {
     await startRoute(destination, mode);
   };
 
+  // Handle selecting a pin — if routing is active, auto-reroute to new place
+  const handleSelectPlace = (id) => {
+    setSelectedId(id);
+    // If already routing, auto-reroute to newly selected place
+    if (routeData || isRouting) {
+      const newPlace = places.find((p) => p.id === id);
+      if (newPlace) {
+        startRoute({ lat: newPlace.lat, lng: newPlace.lng }, transportMode);
+      }
+    }
+  };
+
   // Handle close directions
   const handleCloseDirections = () => {
     clearRoute();
@@ -73,7 +85,7 @@ export default function MapPage() {
         <MapView
           places={places}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={handleSelectPlace}
           routeData={routeData}
           transportMode={transportMode}
         />
@@ -82,7 +94,7 @@ export default function MapPage() {
       {/* Left panel: Place popup OR Directions panel */}
       <div className="absolute left-3 top-16 z-30 w-[340px] flex flex-col gap-2">
         {/* Show PlacePopup when no route is active */}
-        {place && !routeData && (
+        {place && !routeData && !isRouting && !routeError && (
           <div className="animate-slideInLeft">
             <PlacePopup
               place={place}
@@ -95,20 +107,22 @@ export default function MapPage() {
 
         {/* Show DirectionsPanel when routing */}
         {(routeData || isRouting || routeError) && (
-          <DirectionsPanel
-            routeData={routeData}
-            isRouting={isRouting}
-            routeError={routeError}
-            transportMode={transportMode}
-            locationStatus={locationStatus}
-            onSwitchMode={switchMode}
-            onRetryGps={retryWithGps}
-            onRouteFromOrigin={routeFromOrigin}
-            onStartRoute={handleStartRoute}
-            destination={place ? { lat: place.lat, lng: place.lng } : null}
-            onClose={handleCloseDirections}
-            placeName={place?.name}
-          />
+          <div key={`route-${selectedId}`} className="animate-slideInLeft">
+            <DirectionsPanel
+              routeData={routeData}
+              isRouting={isRouting}
+              routeError={routeError}
+              transportMode={transportMode}
+              locationStatus={locationStatus}
+              onSwitchMode={switchMode}
+              onRetryGps={retryWithGps}
+              onRouteFromOrigin={routeFromOrigin}
+              onStartRoute={handleStartRoute}
+              destination={place ? { lat: place.lat, lng: place.lng } : null}
+              onClose={handleCloseDirections}
+              placeName={place?.name}
+            />
+          </div>
         )}
       </div>
 

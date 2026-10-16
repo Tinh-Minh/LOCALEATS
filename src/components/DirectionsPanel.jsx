@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { PRESET_LOCATIONS } from "../hooks/useRouting";
 
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
 const TRANSPORT_MODES = [
   { id: "bike", icon: "🏍️", label: "Xe máy" },
   { id: "car", icon: "🚗", label: "Ô tô" },
@@ -69,6 +71,7 @@ export default function DirectionsPanel({
   const [isSearchingOrigin, setIsSearchingOrigin] = useState(false);
   const [isSearchingDest, setIsSearchingDest] = useState(false);
   const [customDestName, setCustomDestName] = useState(null);
+  const [showGoogleMap, setShowGoogleMap] = useState(true);
 
   const gpsWarning = locationStatus && GPS_WARNINGS[locationStatus] ? GPS_WARNINGS[locationStatus] : null;
   const isUsingFallback = !!gpsWarning;
@@ -317,6 +320,37 @@ export default function DirectionsPanel({
               </div>
             )}
           </div>
+
+          {/* Google Maps Embed — visual route map */}
+          {API_KEY && routeData?.origin && routeData?.destination && (
+            <div className="mx-3 mb-2">
+              <button
+                onClick={() => setShowGoogleMap(!showGoogleMap)}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-semibold transition-all hover:bg-blue-100 active:scale-[0.98]"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px]">map</span>
+                  Bản đồ Google Maps
+                </span>
+                <span className="material-symbols-outlined text-[14px] transition-transform" style={{ transform: showGoogleMap ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  expand_more
+                </span>
+              </button>
+              {showGoogleMap && (
+                <div className="mt-1.5 rounded-xl overflow-hidden border border-gray-200 shadow-md animate-slideInUp">
+                  <iframe
+                    title="Google Maps Directions"
+                    width="100%"
+                    height="220"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps/embed/v1/directions?key=${API_KEY}&origin=${routeData.origin.lat},${routeData.origin.lng}&destination=${routeData.destination.lat},${routeData.destination.lng}&mode=${transportMode === 'walk' ? 'walking' : 'driving'}&language=vi`}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Summary card */}
           <div className="mx-3 mb-2 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-3 border border-orange-100/80">

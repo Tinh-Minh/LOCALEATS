@@ -121,7 +121,7 @@ export default function PlacePopup({ place, onClose, onStartRoute, isRouting }) 
             ) : (
               <>
                 <span className="material-symbols-outlined text-[15px] leading-none">directions</span>
-                <span className="leading-none">Bắt đầu chỉ đường ({modes.find(m => m.id === selectedMode)?.time})</span>
+                <span className="leading-none">Bắt đầu chỉ đường</span>
               </>
             )}
           </button>
