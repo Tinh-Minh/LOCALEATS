@@ -1,8 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { navItems } from "../data/places";
 
 export default function Navbar({ onMenuToggle }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200/80 shadow-sm h-16 flex items-center px-4 gap-3 animate-slideInDown">
@@ -31,7 +32,10 @@ export default function Navbar({ onMenuToggle }) {
       </div>
 
       {/* Chỉ đường button */}
-      <button className="flex items-center gap-1.5 bg-[#E84A27] text-white rounded-full px-4 h-9 text-[12px] font-bold shadow-lg shadow-[#E84A27]/30 hover:bg-[#c93d1f] transition-all hover:scale-105 active:scale-95 whitespace-nowrap btn-press glow-primary-hover">
+      <button
+        onClick={() => navigate("/")}
+        className="flex items-center gap-1.5 bg-[#E84A27] text-white rounded-full px-4 h-9 text-[12px] font-bold shadow-lg shadow-[#E84A27]/30 hover:bg-[#c93d1f] transition-all hover:scale-105 active:scale-95 whitespace-nowrap btn-press glow-primary-hover"
+      >
         <span className="material-symbols-outlined text-[16px]">directions</span>
         Chỉ đường
       </button>

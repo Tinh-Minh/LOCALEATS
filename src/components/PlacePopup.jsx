@@ -1,5 +1,22 @@
-export default function PlacePopup({ place, onClose }) {
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+export default function PlacePopup({ place, onClose, onStartRoute, isRouting }) {
+  const navigate = useNavigate();
+  const [selectedMode, setSelectedMode] = useState("bike");
   if (!place) return null;
+
+  const modes = [
+    { id: "bike", icon: "🏍️", label: "Xe máy", time: `${place.bikeMin} phút`, dist: `${place.distanceKm} km` },
+    { id: "car", icon: "🚗", label: "Ô tô", time: `${place.carMin} phút`, dist: `${(place.distanceKm * 1.14).toFixed(1)} km` },
+    { id: "walk", icon: "🚶", label: "Đi bộ", time: `${place.walkMin} phút`, dist: `${(place.distanceKm * 0.83).toFixed(1)} km` },
+  ];
+
+  const handleStartRoute = () => {
+    if (onStartRoute) {
+      onStartRoute({ lat: place.lat, lng: place.lng }, selectedMode);
+    }
+  };
 
   return (
     <div className="bg-white border border-gray-200/90 rounded-2xl shadow-2xl overflow-hidden w-full animate-fadeIn">
@@ -59,27 +76,24 @@ export default function PlacePopup({ place, onClose }) {
           <span className="text-[#E84A27] font-semibold">Thời gian chờ: ~{place.waitTime}</span>
         </div>
 
-        {/* Route options */}
+        {/* Route options — now interactive */}
         <div className="bg-gray-50/80 rounded-xl p-3 animate-slideInUp" style={{ animationDelay: '0.25s' }}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Lộ trình nhanh nhất</span>
             <span className="text-[11px] text-[#E84A27] font-semibold">Tránh kẹt xe</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {[
-              { icon: "🏍️", mode: "Xe máy", time: `${place.bikeMin} phút`, dist: `${place.distanceKm} km`, active: true },
-              { icon: "🚗", mode: "Ô tô", time: `${place.carMin} phút`, dist: `${(place.distanceKm * 1.14).toFixed(1)} km`, active: false },
-              { icon: "🚶", mode: "Đi bộ", time: `${place.walkMin} phút`, dist: `${(place.distanceKm * 0.83).toFixed(1)} km`, active: false },
-            ].map((m) => (
+            {modes.map((m) => (
               <div
-                key={m.mode}
+                key={m.id}
+                onClick={() => setSelectedMode(m.id)}
                 className={`flex flex-col items-center py-2 px-1 rounded-xl cursor-pointer transition-all hover-lift ${
-                  m.active ? "bg-[#E84A27] text-white shadow-md shadow-[#E84A27]/30 glow-primary" : "bg-white border border-gray-200 hover:border-[#E84A27] hover:shadow-md"
+                  selectedMode === m.id ? "bg-[#E84A27] text-white shadow-md shadow-[#E84A27]/30 glow-primary" : "bg-white border border-gray-200 hover:border-[#E84A27] hover:shadow-md"
                 }`}
               >
                 <span className="text-[16px]">{m.icon}</span>
-                <span className={`text-[12px] font-bold mt-0.5 ${m.active ? "text-white" : "text-gray-800"}`}>{m.time}</span>
-                <span className={`text-[10px] ${m.active ? "text-white/80" : "text-gray-500"}`}>{m.dist}</span>
+                <span className={`text-[12px] font-bold mt-0.5 ${selectedMode === m.id ? "text-white" : "text-gray-800"}`}>{m.time}</span>
+                <span className={`text-[10px] ${selectedMode === m.id ? "text-white/80" : "text-gray-500"}`}>{m.dist}</span>
               </div>
             ))}
           </div>
@@ -90,9 +104,26 @@ export default function PlacePopup({ place, onClose }) {
 
         {/* CTA buttons */}
         <div className="flex gap-2 animate-slideInUp" style={{ animationDelay: '0.3s' }}>
-          <button className="flex-1 h-11 rounded-full bg-[#E84A27] text-white text-[13px] font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#E84A27]/30 hover:bg-[#c93d1f] transition-all hover:scale-[1.02] active:scale-95 btn-press glow-primary-hover">
-            <span className="material-symbols-outlined text-[16px]">directions</span>
-            Bắt đầu chỉ đường ({place.bikeMin}p)
+          <button
+            onClick={handleStartRoute}
+            disabled={isRouting}
+            className={`flex-1 h-11 rounded-full text-white text-[12px] font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-[#E84A27]/30 transition-all hover:scale-[1.02] active:scale-95 btn-press glow-primary-hover whitespace-nowrap leading-none px-3 ${
+              isRouting
+                ? "bg-gray-400 cursor-wait shadow-none"
+                : "bg-[#E84A27] hover:bg-[#c93d1f]"
+            }`}
+          >
+            {isRouting ? (
+              <>
+                <span className="material-symbols-outlined text-[15px] leading-none animate-spin">progress_activity</span>
+                <span className="leading-none">Đang tìm đường...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[15px] leading-none">directions</span>
+                <span className="leading-none">Bắt đầu chỉ đường ({modes.find(m => m.id === selectedMode)?.time})</span>
+              </>
+            )}
           </button>
           <button className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-orange-50 hover:border-[#E84A27] hover:scale-110 transition-all">
             <span className="material-symbols-outlined text-[18px] text-gray-600">bookmark</span>

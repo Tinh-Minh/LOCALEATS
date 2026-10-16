@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { aiDishes } from "../data/places";
 
 const tasteOptions = {
@@ -11,9 +12,15 @@ const tasteOptions = {
 const quickTags = ["Cay kéo sợi tươi", "Ăn một mình", "Cần béo xào nhẹ", "Nước lèo hầm đậm đà", "Thanh đạm giải ngày", "Đậm đà cảm xúc", "Trắng mềm ngọt"];
 
 export default function AIPage() {
+  const navigate = useNavigate();
   const [prompt, setPrompt] = useState(`Trời mưa lạnh thèm tô phở bò sốt vang nóng hổi dưới 60!`);
   const [selectedTags, setSelectedTags] = useState(["Cần béo xào nhẹ", "Thanh đạm giải ngày"]);
-  const [selectedMood, setSelectedMood] = useState("Cắn ngập đôi xỉ vào");
+  const [selectedOptions, setSelectedOptions] = useState({
+    mood: ["Cắn ngập đôi xỉ vào"],
+    budget: [],
+    time: [],
+    distance: [],
+  });
   const [aiStep, setAiStep] = useState(2.4);
   const [showResult, setShowResult] = useState(true);
 
@@ -21,6 +28,15 @@ export default function AIPage() {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
+  };
+
+  const toggleOption = (category, option) => {
+    setSelectedOptions((prev) => ({
+      ...prev,
+      [category]: prev[category].includes(option)
+        ? prev[category].filter((o) => o !== option)
+        : [...prev[category], option],
+    }));
   };
 
   return (
@@ -98,7 +114,11 @@ export default function AIPage() {
             <h3 className="font-bold text-[15px] text-gray-900">📊 Ma Trận Khẩu Vị & Cảm Xúc (Taste Matrix)</h3>
             <span className="text-[11px] text-gray-500">Đang quét 482 quán mở cửa tại Hà Nội / TP.HCM</span>
           </div>
-          <p className="text-[12px] text-gray-500 mb-4">Tinh chỉnh nhỏ các tiêu chí để AI lọc chuẩn sức 100% quán mở cửa của quán bạn</p>
+          <p className="text-[12px] text-gray-500 mb-1">Tinh chỉnh nhỏ các tiêu chí để AI lọc chuẩn sức 100% quán mở cửa của quán bạn</p>
+          <p className="text-[11px] text-[#E84A27] font-medium mb-4 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">info</span>
+            Bạn có thể chọn nhiều tiêu chí trong mỗi mục để AI gợi ý chính xác hơn
+          </p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {Object.entries(tasteOptions).map(([key, opts]) => (
               <div key={key} className="bg-gray-50 rounded-xl p-3">
@@ -108,19 +128,23 @@ export default function AIPage() {
                   </span>
                   <span className="text-[11px] font-bold text-gray-700">{opts[0]}</span>
                 </div>
-                {opts.slice(1).map((opt) => (
-                  <label key={opt} className="flex items-center gap-2 py-1 cursor-pointer group">
-                    <div
-                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
-                        selectedMood === opt ? "border-[#E84A27] bg-[#E84A27]" : "border-gray-300 group-hover:border-[#E84A27]"
-                      }`}
-                      onClick={() => setSelectedMood(opt)}
-                    >
-                      {selectedMood === opt && <div className="w-2 h-2 rounded-full bg-white"></div>}
-                    </div>
-                    <span className="text-[11px] text-gray-600">{opt}</span>
-                  </label>
-                ))}
+                {opts.slice(1).map((opt) => {
+                  const isSelected = selectedOptions[key]?.includes(opt);
+                  return (
+                    <label key={opt} className="flex items-center gap-2 py-1 cursor-pointer group" onClick={() => toggleOption(key, opt)}>
+                      <div
+                        className={`w-4 h-4 rounded flex items-center justify-center transition-all border-2 ${
+                          isSelected ? "border-[#E84A27] bg-[#E84A27]" : "border-gray-300 group-hover:border-[#E84A27]"
+                        }`}
+                      >
+                        {isSelected && (
+                          <span className="material-symbols-outlined text-white text-[12px]" style={{ fontVariationSettings: "'wght' 700" }}>check</span>
+                        )}
+                      </div>
+                      <span className={`text-[11px] ${isSelected ? "text-[#E84A27] font-semibold" : "text-gray-600"}`}>{opt}</span>
+                    </label>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -190,7 +214,10 @@ export default function AIPage() {
 
                   {/* Buttons */}
                   <div className="flex gap-2 px-3 pb-3 mt-1">
-                    <button className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-full bg-[#E84A27] text-white text-[11px] font-bold shadow-md hover:bg-[#c93d1f] transition-all hover:scale-[1.02] btn-press glow-primary-hover">
+                    <button
+                      onClick={() => navigate('/', { state: { selectedPlaceId: dish.placeId } })}
+                      className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-full bg-[#E84A27] text-white text-[11px] font-bold shadow-md hover:bg-[#c93d1f] transition-all hover:scale-[1.02] btn-press glow-primary-hover"
+                    >
                       <span className="material-symbols-outlined text-[14px]">directions</span>
                       Chỉ đường ngay ({dish.distanceKm}km)
                     </button>
@@ -250,7 +277,10 @@ export default function AIPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-2 justify-end">
-                    <button className="flex items-center gap-1 px-3 h-8 rounded-full bg-[#E84A27] text-white text-[11px] font-bold hover:bg-[#c93d1f] transition-all">
+                    <button
+                      onClick={() => navigate('/', { state: { selectedPlaceId: 2 } })}
+                      className="flex items-center gap-1 px-3 h-8 rounded-full bg-[#E84A27] text-white text-[11px] font-bold hover:bg-[#c93d1f] transition-all"
+                    >
                       <span className="material-symbols-outlined text-[14px]">directions</span>
                       Chỉ đường tới quán ngay
                     </button>
@@ -287,7 +317,10 @@ export default function AIPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] text-gray-600">🍽️ {t.nearby} quán bán quanh bạn</span>
                     </div>
-                    <button className="mt-2 w-full h-8 rounded-full border border-[#E84A27] text-[#E84A27] text-[11px] font-bold hover:bg-[#E84A27] hover:text-white transition-all flex items-center justify-center gap-1">
+                    <button
+                      onClick={() => navigate('/', { state: { selectedPlaceId: 1 } })}
+                      className="mt-2 w-full h-8 rounded-full border border-[#E84A27] text-[#E84A27] text-[11px] font-bold hover:bg-[#E84A27] hover:text-white transition-all flex items-center justify-center gap-1"
+                    >
                       <span className="material-symbols-outlined text-[14px]">directions</span>
                       Tìm đồ gần nhất
                     </button>

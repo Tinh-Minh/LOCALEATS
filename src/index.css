@@ -99,6 +99,23 @@ button, a, input, [role="button"] {
     'opsz' 24;
 }
 
+/* ---------- GPS Location Marker Animations ---------- */
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 @layer utilities {
   /* Stagger delay utilities for Tailwind */
   .delay-100 { animation-delay: 100ms; }

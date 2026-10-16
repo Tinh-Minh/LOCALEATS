@@ -43,7 +43,7 @@ const sidebarNavItems = [
   {
     id: "direction",
     label: "Tìm đường đa phương tiện",
-    path: "/direction",
+    path: "/",
     icon: "alt_route",
     iconColor: "text-[#F58A07]",
     type: "normal",

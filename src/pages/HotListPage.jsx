@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { places, trendingFoods } from "../data/places";
 
 const tabOptions = [
@@ -8,8 +9,10 @@ const tabOptions = [
 ];
 
 export default function HotListPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("week");
   const [viewMode, setViewMode] = useState("district");
+  const [visibleCount, setVisibleCount] = useState(5);
 
   const hotPlaces = [...places].sort((a, b) => b.votes - a.votes);
 
@@ -89,7 +92,7 @@ export default function HotListPage() {
             <span>Điều hướng</span>
           </div>
 
-          {hotPlaces.slice(0, 10).map((p, i) => (
+          {hotPlaces.slice(0, visibleCount).map((p, i) => (
             <div
               key={p.id}
               className="grid grid-cols-[60px_1fr_160px_140px_100px] gap-4 px-5 py-3.5 border-t border-gray-50 hover:bg-orange-50/50 transition-all items-center group card-shine"
@@ -155,7 +158,10 @@ export default function HotListPage() {
               </div>
 
               {/* Navigation */}
-              <button className="flex items-center gap-1.5 bg-[#E84A27] text-white px-3 py-2 rounded-full text-[11px] font-bold hover:bg-[#c93d1f] transition-all hover:scale-105 shadow-md shadow-[#E84A27]/25 opacity-0 group-hover:opacity-100 btn-press">
+              <button
+                onClick={() => navigate('/', { state: { selectedPlaceId: p.id } })}
+                className="flex items-center gap-1.5 bg-[#E84A27] text-white px-3 py-2 rounded-full text-[11px] font-bold hover:bg-[#c93d1f] transition-all hover:scale-105 shadow-md shadow-[#E84A27]/25 opacity-0 group-hover:opacity-100 btn-press"
+              >
                 <span className="material-symbols-outlined text-[14px]">directions</span>
                 Chỉ đường
               </button>
@@ -163,11 +169,21 @@ export default function HotListPage() {
           ))}
 
           <div className="px-5 py-3 flex items-center justify-between border-t border-gray-100">
-            <button className="text-[12px] text-[#E84A27] font-bold flex items-center gap-1 hover:underline">
-              <span className="material-symbols-outlined text-[16px]">expand_more</span>
-              Cuộn để xem tiếp từ Top 5 đến Top 10
-            </button>
-            <span className="text-[11px] text-gray-500">10/10 quán cập nhật Live GPS</span>
+            {visibleCount < hotPlaces.length ? (
+              <button
+                onClick={() => setVisibleCount((prev) => Math.min(prev + 5, hotPlaces.length))}
+                className="text-[12px] text-[#E84A27] font-bold flex items-center gap-1 hover:underline transition-all hover:gap-2"
+              >
+                <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                Xem thêm ({hotPlaces.length - visibleCount} quán còn lại)
+              </button>
+            ) : (
+              <span className="text-[12px] text-green-600 font-bold flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                Đã hiển thị tất cả {hotPlaces.length} quán
+              </span>
+            )}
+            <span className="text-[11px] text-gray-500">{Math.min(visibleCount, hotPlaces.length)}/{hotPlaces.length} quán cập nhật Live GPS</span>
           </div>
         </div>
 
@@ -205,7 +221,10 @@ export default function HotListPage() {
                     <span className="text-[11px] text-gray-600">🍽️ {food.nearbyCount} quán bán quanh bạn</span>
                     <span className="text-[11px] text-gray-400">{food.weekOrders}</span>
                   </div>
-                  <button className="mt-2 w-full flex items-center justify-center gap-1.5 h-8 rounded-full border border-[#E84A27] text-[#E84A27] text-[11px] font-bold hover:bg-[#E84A27] hover:text-white transition-all btn-press hover:shadow-md hover:shadow-[#E84A27]/25">
+                  <button
+                    onClick={() => navigate('/', { state: { selectedPlaceId: food.id } })}
+                    className="mt-2 w-full flex items-center justify-center gap-1.5 h-8 rounded-full border border-[#E84A27] text-[#E84A27] text-[11px] font-bold hover:bg-[#E84A27] hover:text-white transition-all btn-press hover:shadow-md hover:shadow-[#E84A27]/25"
+                  >
                     <span className="material-symbols-outlined text-[14px]">directions</span>
                     Tìm quán gần nhất
                   </button>
