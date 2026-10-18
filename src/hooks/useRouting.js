@@ -50,11 +50,41 @@ function formatDistance(meters) {
 }
 
 function formatDuration(seconds) {
-  const mins = Math.round(seconds / 60);
+  const mins = Math.max(1, Math.round(seconds / 60));
   if (mins < 60) return `${mins} phút`;
   const hrs = Math.floor(mins / 60);
   const remainMins = mins % 60;
-  return `${hrs}h ${remainMins}p`;
+  return remainMins > 0 ? `${hrs}h ${remainMins}p` : `${hrs} giờ`;
+}
+
+// Vận tốc thực tế tại đô thị Việt Nam (TP.HCM / Hà Nội):
+// - Xe máy (bike): ~25 km/h (luồn lách hẻm tốt, nhanh nhất trong phố đông)
+// - Ô tô (car): ~18 km/h (dễ kẹt xe, đường một chiều, quay đầu xa hơn)
+// - Đi bộ (walk): ~4.5 - 5 km/h (chậm hơn xe máy khoảng 5 lần)
+function calculateModeMetrics(rawDistanceMeters, mode) {
+  let adjustedDistance = rawDistanceMeters;
+  let durationSeconds = 0;
+
+  if (mode === "walk") {
+    // Đi bộ: vận tốc trung bình 4.8 km/h = 1.33 m/s, có thể đi tắt qua đường nhỏ
+    adjustedDistance = rawDistanceMeters * 0.95;
+    durationSeconds = Math.round(adjustedDistance / 1.33);
+  } else if (mode === "car") {
+    // Ô tô: quãng đường dài hơn do đường 1 chiều, cấm rẽ (~1.12x), vận tốc 18 km/h = 5 m/s
+    adjustedDistance = rawDistanceMeters * 1.12;
+    durationSeconds = Math.round(adjustedDistance / 5.0);
+  } else {
+    // Xe máy (bike): vận tốc 25 km/h = 6.94 m/s, luồn lách linh hoạt
+    adjustedDistance = rawDistanceMeters;
+    durationSeconds = Math.round(adjustedDistance / 6.94);
+  }
+
+  return {
+    distanceText: formatDistance(adjustedDistance),
+    durationText: formatDuration(durationSeconds),
+    rawDistance: adjustedDistance,
+    rawDuration: durationSeconds,
+  };
 }
 
 // Decode OSRM polyline (Google's encoded polyline format)
@@ -200,27 +230,33 @@ export default function useRouting() {
       const route = data.routes[0];
       const coords = decodePolyline(route.geometry);
       console.log("[Routing] Decoded", coords.length, "coordinate points");
+
+      const overallMetrics = calculateModeMetrics(route.distance, mode);
+      const ratio = overallMetrics.rawDuration / Math.max(1, route.duration);
       
-      const steps = route.legs[0].steps.map((step, i) => ({
-        id: i,
-        instruction: getInstruction(step),
-        distance: formatDistance(step.distance),
-        duration: formatDuration(step.duration),
-        name: step.name || "",
-        rawDistance: step.distance,
-        rawDuration: step.duration,
-        location: step.maneuver.location,
-        type: step.maneuver.type,
-      }));
+      const steps = route.legs[0].steps.map((step, i) => {
+        const stepDuration = Math.round(step.duration * ratio);
+        return {
+          id: i,
+          instruction: getInstruction(step),
+          distance: formatDistance(step.distance),
+          duration: formatDuration(stepDuration),
+          name: step.name || "",
+          rawDistance: step.distance,
+          rawDuration: stepDuration,
+          location: step.maneuver.location,
+          type: step.maneuver.type,
+        };
+      });
 
       const summary = {
-        totalDistance: formatDistance(route.distance),
-        totalDuration: formatDuration(route.duration),
-        rawDistance: route.distance,
-        rawDuration: route.duration,
+        totalDistance: overallMetrics.distanceText,
+        totalDuration: overallMetrics.durationText,
+        rawDistance: overallMetrics.rawDistance,
+        rawDuration: overallMetrics.rawDuration,
       };
 
-      const newRouteData = { coords, steps, summary, origin, destination, locationStatus };
+      const newRouteData = { coords, steps, summary, origin, destination, locationStatus, transportMode: mode };
       console.log("[Routing] ✅ Route ready:", summary, "| Location from:", locationStatus);
       setRouteData(newRouteData);
       setIsRouting(false);
@@ -292,26 +328,32 @@ export default function useRouting() {
       const route = data.routes[0];
       const coords = decodePolyline(route.geometry);
       
-      const steps = route.legs[0].steps.map((step, i) => ({
-        id: i,
-        instruction: getInstruction(step),
-        distance: formatDistance(step.distance),
-        duration: formatDuration(step.duration),
-        name: step.name || "",
-        rawDistance: step.distance,
-        rawDuration: step.duration,
-        location: step.maneuver.location,
-        type: step.maneuver.type,
-      }));
+      const overallMetrics = calculateModeMetrics(route.distance, transportMode);
+      const ratio = overallMetrics.rawDuration / Math.max(1, route.duration);
+
+      const steps = route.legs[0].steps.map((step, i) => {
+        const stepDuration = Math.round(step.duration * ratio);
+        return {
+          id: i,
+          instruction: getInstruction(step),
+          distance: formatDistance(step.distance),
+          duration: formatDuration(stepDuration),
+          name: step.name || "",
+          rawDistance: step.distance,
+          rawDuration: stepDuration,
+          location: step.maneuver.location,
+          type: step.maneuver.type,
+        };
+      });
 
       const summary = {
-        totalDistance: formatDistance(route.distance),
-        totalDuration: formatDuration(route.duration),
-        rawDistance: route.distance,
-        rawDuration: route.duration,
+        totalDistance: overallMetrics.distanceText,
+        totalDuration: overallMetrics.durationText,
+        rawDistance: overallMetrics.rawDistance,
+        rawDuration: overallMetrics.rawDuration,
       };
 
-      const newRouteData = { coords, steps, summary, origin: manualOrigin, destination, locationStatus: "manual", originName };
+      const newRouteData = { coords, steps, summary, origin: manualOrigin, destination, locationStatus: "manual", originName, transportMode };
       console.log("[Routing] ✅ Route ready (manual origin):", summary);
       setRouteData(newRouteData);
       setIsRouting(false);

@@ -2,334 +2,383 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { aiDishes } from "../data/places";
 
-const tasteOptions = {
-  mood: ["Tâm trạng & Con thèm", "Thêm nước lóng ẩm stress", "Cắn ngập đôi xỉ vào", "Thành đạm rau củ giải ngay", "Ăn vặt dinh dưỡng phổ tầm chuyện"],
-  budget: ["Ngân sách thực tế", "Trưa hè viên: 35.000đ", "Phở thôm: 35k – 70k", "Tuyển tỉ: 70k – 150k", "Thả ga: >150.000đ"],
-  time: ["Thời tiết & Thời điểm", "Trưa hè nắng gắt (Chạo mây)", "Chiều mưa se lạnh (Cần món nóng)", "Cà chiếm sau 22:00", "Hợp mặt giao đãi / Nhóm"],
-  distance: ["Khoảng cách & Bán kính", "1. Đổ bộ < 1km (3–5 phút)", "2. Xe máy 10–15 phút (< 4km)", "3. Ổn tô / xe hơi (< 10 phút)", "4. Bất chấp khoảng cách (Quán Top)"],
-};
+const moodCategories = [
+  { id: "hot_broth", label: "Nước lèo nóng hổi", icon: "soup_kitchen", desc: "Phở, bún bò, hủ tiếu hầm xương" },
+  { id: "quick_crisp", label: "Ăn nhanh giòn rụm", icon: "lunch_dining", desc: "Bánh mì pate, đồ nướng, gỏi cuốn" },
+  { id: "healthy", label: "Thanh đạm giải ngấy", icon: "spa", desc: "Rau củ, salad, cuốn tôm thịt" },
+  { id: "full_belly", label: "No bụng chắc dạ", icon: "rice_bowl", desc: "Cơm tấm, cơm văn phòng nhiều thịt" },
+];
 
-const quickTags = ["Cay kéo sợi tươi", "Ăn một mình", "Cần béo xào nhẹ", "Nước lèo hầm đậm đà", "Thanh đạm giải ngày", "Đậm đà cảm xúc", "Trắng mềm ngọt"];
+const budgetRanges = [
+  { id: "budget_low", label: "Dưới 40.000đ", sub: "Bình dân tiết kiệm" },
+  { id: "budget_mid", label: "40.000đ - 80.000đ", sub: "Phổ biến hợp túi tiền" },
+  { id: "budget_high", label: "Trên 80.000đ", sub: "Thả ga thưởng thức" },
+];
+
+const distanceRanges = [
+  { id: "dist_1", label: "< 1 km", sub: "Đi bộ 5 phút" },
+  { id: "dist_3", label: "< 3 km", sub: "Xe máy 10 phút" },
+  { id: "dist_far", label: "Bất kể khoảng cách", sub: "Miễn là quán đỉnh" },
+];
+
+const quickTasteTags = [
+  "Cay nồng ấm bụng",
+  "Nước lèo thanh ngọt",
+  "Ăn một mình",
+  "Tụ tập bạn bè",
+  "Trời mưa lạnh",
+  "Thịt nướng xém cạnh",
+  "Không dầu mỡ",
+];
 
 export default function AIPage() {
   const navigate = useNavigate();
-  const [prompt, setPrompt] = useState(`Trời mưa lạnh thèm tô phở bò sốt vang nóng hổi dưới 60!`);
-  const [selectedTags, setSelectedTags] = useState(["Cần béo xào nhẹ", "Thanh đạm giải ngày"]);
-  const [selectedOptions, setSelectedOptions] = useState({
-    mood: ["Cắn ngập đôi xỉ vào"],
-    budget: [],
-    time: [],
-    distance: [],
-  });
-  const [aiStep, setAiStep] = useState(2.4);
-  const [showResult, setShowResult] = useState(true);
+  const [promptText, setPromptText] = useState("Trời mưa thèm tô phở bò sốt vang nóng hổi ấm bụng!");
+  const [selectedMood, setSelectedMood] = useState("hot_broth");
+  const [selectedBudget, setSelectedBudget] = useState("budget_mid");
+  const [selectedDistance, setSelectedDistance] = useState("dist_3");
+  const [activeTags, setActiveTags] = useState(["Cay nồng ấm bụng", "Trời mưa lạnh"]);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Vòng quay may mắn / bốc quẻ ngẫu nhiên
+  const [luckyDish, setLuckyDish] = useState(aiDishes[0]);
+  const [isSpinning, setIsSpinning] = useState(false);
 
   const toggleTag = (tag) => {
-    setSelectedTags((prev) =>
+    setActiveTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
-  const toggleOption = (category, option) => {
-    setSelectedOptions((prev) => ({
-      ...prev,
-      [category]: prev[category].includes(option)
-        ? prev[category].filter((o) => o !== option)
-        : [...prev[category], option],
-    }));
+  const handleGenerate = () => {
+    setIsGenerating(true);
+    setTimeout(() => {
+      setIsGenerating(false);
+    }, 600);
+  };
+
+  const handleLuckySpin = () => {
+    setIsSpinning(true);
+    let counter = 0;
+    const interval = setInterval(() => {
+      const randomIndex = Math.floor(Math.random() * aiDishes.length);
+      setLuckyDish(aiDishes[randomIndex]);
+      counter++;
+      if (counter > 8) {
+        clearInterval(interval);
+        setIsSpinning(false);
+      }
+    }, 100);
   };
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar bg-[#FDFBF7] page-enter">
-      <div className="max-w-5xl mx-auto px-6 py-6">
-        {/* AI badge */}
-        <div className="flex items-center gap-2 mb-3 animate-fadeIn">
-          <div className="flex items-center gap-1.5 bg-green-100 text-green-700 text-[11px] font-bold px-2.5 py-1 rounded-full animate-pulse">
-            <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
-            AI SMART SOMMELIER
-          </div>
-          <span className="text-gray-400 text-[11px]">•</span>
-          <span className="text-orange-500 text-[11px] font-medium">Cô Vân Ẩm Thực Cà Nhân Hoa</span>
-          <div className="ml-auto bg-orange-50 border border-orange-200 text-[#E84A27] text-[11px] font-bold px-2 py-0.5 rounded-full">
-            AI {aiStep}
-          </div>
+    <div className="flex-1 overflow-y-auto no-scrollbar bg-[#FDFBF7] page-enter pb-16">
+      {/* Top Banner AI Smart Sommelier */}
+      <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-rose-500/10 border-b border-orange-200/80 px-6 py-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 bg-emerald-100 text-emerald-800 text-[11px] font-black px-2.5 py-0.5 rounded-full">
+            <span className="material-symbols-outlined text-[14px]">smart_toy</span>
+            AI SOMMELIER 2.0
+          </span>
+          <span className="text-[12px] text-gray-700 hidden sm:inline">
+            Tự động gợi ý chuẩn xác theo tâm trạng, túi tiền và thời tiết hiện tại
+          </span>
+        </div>
+        <span className="text-[11px] font-bold text-[#E84A27] bg-white px-2.5 py-0.5 rounded-full border border-orange-100 shadow-sm">
+          Đang quét quán mở cửa quanh bạn
+        </span>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-6">
+        {/* Tiêu đề chính */}
+        <div className="mb-6 animate-fadeIn">
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Hôm Nay Bạn Muốn Ăn Gì? <span className="gradient-text-premium">Để AI Gợi Ý</span>
+          </h1>
+          <p className="text-[13px] text-gray-600 mt-1 max-w-2xl leading-relaxed">
+            Chọn cảm xúc hoặc nhập trực tiếp mong muốn của bạn. AI sẽ phân tích dữ liệu quán ăn đang mở cửa trong bán kính gần nhất để đưa ra lựa chọn hoàn hảo.
+          </p>
         </div>
 
-        {/* Main headline */}
-        <h1 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1 animate-slideInUp">
-          Hôm nay bạn muốn ăn gì?
-        </h1>
-        <h2 className="text-[28px] font-extrabold leading-tight mb-3 gradient-text-premium">
-          Để AI LOCALEATS thấu hiểu khẩu vị của bạn!
-        </h2>
-        <p className="text-[13px] text-gray-600 mb-5 max-w-2xl">
-          Khám phá bản đồ quán ngon thực tế theo từng cảm xúc, thời tiết thực tại và ngân sách trong tủi. Tự động đề xuất chỉ đường ngắn nhất và kênh Facebook chính thức của quán.
-        </p>
-
-        {/* AI prompt input */}
-        <div className="glass-card border-2 border-orange-200 rounded-2xl p-4 mb-4 animate-slideInUp" style={{ animationDelay: '0.1s' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px] text-[#E84A27]">place</span>
+        {/* Khung Nhập Prompt & Tag nhanh */}
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-4 sm:p-5 mb-8 animate-slideInUp">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
+            <div className="flex-1 flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 gap-2 focus-within:border-[#E84A27] focus-within:bg-white transition-all">
+              <span className="material-symbols-outlined text-[#E84A27] text-[20px]">psychology</span>
+              <input
+                type="text"
+                value={promptText}
+                onChange={(e) => setPromptText(e.target.value)}
+                placeholder="Ví dụ: Đang stress cần món gì cay cay nóng hổi dưới 50k..."
+                className="bg-transparent flex-1 text-[13px] font-medium text-gray-900 outline-none placeholder-gray-400"
+              />
             </div>
-            <div className="flex-1 bg-gray-50 rounded-full px-4 py-2 text-[13px] text-gray-800 font-medium border border-gray-200">
-              {prompt}
-            </div>
-            <button className="text-[12px] text-gray-500 flex items-center gap-1 hover:text-[#E84A27] transition-colors whitespace-nowrap">
-              Tâm trạng
-            </button>
             <button
-              onClick={() => setShowResult(true)}
-              className="flex items-center gap-1.5 bg-[#E84A27] text-white px-4 py-2 rounded-full text-[12px] font-bold shadow-md shadow-[#E84A27]/30 hover:bg-[#c93d1f] transition-all hover:scale-105 whitespace-nowrap btn-press glow-primary-hover"
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="flex items-center justify-center gap-2 px-6 h-11 rounded-full bg-[#E84A27] text-white text-[12px] font-bold hover:bg-[#c93d1f] shadow-md shadow-[#E84A27]/25 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             >
-              <span className="material-symbols-outlined text-[16px]">send</span>
-              Gợi Ý Tức Thì
+              <span className="material-symbols-outlined text-[16px]">
+                {isGenerating ? "autorenew" : "magic_button"}
+              </span>
+              {isGenerating ? "Đang phân tích..." : "Gợi ý ngay"}
             </button>
           </div>
 
-          {/* Quick tag suggestions */}
-          <div>
-            <p className="text-[11px] text-gray-500 mb-2 font-medium">THỨ NAY:</p>
-            <div className="flex flex-wrap gap-2">
-              {quickTags.map((tag) => (
+          {/* Quick taste tags */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-gray-100">
+            <span className="text-[11px] font-bold text-gray-400 mr-1 uppercase">Thẻ khẩu vị:</span>
+            {quickTasteTags.map((tag) => {
+              const isSelected = activeTags.includes(tag);
+              return (
                 <button
                   key={tag}
                   onClick={() => toggleTag(tag)}
-                  className={`h-7 px-3 rounded-full text-[11px] font-semibold transition-all ${
-                    selectedTags.includes(tag)
+                  className={`text-[11px] font-semibold px-3 py-1 rounded-full transition-all ${
+                    isSelected
                       ? "bg-[#E84A27] text-white shadow-sm"
                       : "bg-gray-100 text-gray-600 hover:bg-orange-50 hover:text-[#E84A27]"
                   }`}
                 >
                   {tag}
                 </button>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3 Tiêu chí định hướng AI (Tâm trạng - Ngân sách - Bán kính) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8 animate-slideInUp">
+          {/* 1. Tâm trạng & Con thèm */}
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-3 text-gray-900 font-extrabold text-[14px]">
+                <span className="w-7 h-7 rounded-lg bg-orange-100 text-[#E84A27] flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[16px]">sentiment_satisfied</span>
+                </span>
+                1. Tâm trạng & Khẩu vị
+              </div>
+              <div className="space-y-2">
+                {moodCategories.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedMood(m.id)}
+                    className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center gap-2.5 ${
+                      selectedMood === m.id
+                        ? "border-[#E84A27] bg-orange-50/60 text-[#E84A27]"
+                        : "border-gray-100 hover:border-gray-200 text-gray-700 bg-gray-50/50"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">{m.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-[12px]">{m.label}</div>
+                      <div className="text-[10px] text-gray-400 truncate">{m.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Ngân sách thực tế */}
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-3 text-gray-900 font-extrabold text-[14px]">
+                <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[16px]">payments</span>
+                </span>
+                2. Mức giá mong muốn
+              </div>
+              <div className="space-y-2">
+                {budgetRanges.map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => setSelectedBudget(b.id)}
+                    className={`w-full text-left p-3 rounded-xl border transition-all ${
+                      selectedBudget === b.id
+                        ? "border-emerald-600 bg-emerald-50/60 text-emerald-800"
+                        : "border-gray-100 hover:border-gray-200 text-gray-700 bg-gray-50/50"
+                    }`}
+                  >
+                    <div className="font-extrabold text-[13px]">{b.label}</div>
+                    <div className="text-[10px] text-gray-400">{b.sub}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Khoảng cách & Di chuyển */}
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-3 text-gray-900 font-extrabold text-[14px]">
+                <span className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[16px]">near_me</span>
+                </span>
+                3. Bán kính di chuyển
+              </div>
+              <div className="space-y-2">
+                {distanceRanges.map((d) => (
+                  <button
+                    key={d.id}
+                    onClick={() => setSelectedDistance(d.id)}
+                    className={`w-full text-left p-3 rounded-xl border transition-all ${
+                      selectedDistance === d.id
+                        ? "border-blue-600 bg-blue-50/60 text-blue-800"
+                        : "border-gray-100 hover:border-gray-200 text-gray-700 bg-gray-50/50"
+                    }`}
+                  >
+                    <div className="font-extrabold text-[13px]">{d.label}</div>
+                    <div className="text-[10px] text-gray-400">{d.sub}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Taste Matrix */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 hover-lift animate-slideInUp" style={{ animationDelay: '0.15s' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-[15px] text-gray-900">📊 Ma Trận Khẩu Vị & Cảm Xúc (Taste Matrix)</h3>
-            <span className="text-[11px] text-gray-500">Đang quét 482 quán mở cửa tại Hà Nội / TP.HCM</span>
+        {/* Kết quả AI Gợi Ý (Món ngon chuẩn vị nhất) */}
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#E84A27] text-[22px]">auto_awesome</span>
+              <h2 className="text-[18px] font-extrabold text-gray-900">
+                Gợi Ý Đỉnh Cao Khớp Khẩu Vị Nhất
+              </h2>
+            </div>
+            <span className="text-[11px] text-gray-500 font-semibold">Tự động ưu tiên quán đang mở</span>
           </div>
-          <p className="text-[12px] text-gray-500 mb-1">Tinh chỉnh nhỏ các tiêu chí để AI lọc chuẩn sức 100% quán mở cửa của quán bạn</p>
-          <p className="text-[11px] text-[#E84A27] font-medium mb-4 flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">info</span>
-            Bạn có thể chọn nhiều tiêu chí trong mỗi mục để AI gợi ý chính xác hơn
-          </p>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {Object.entries(tasteOptions).map(([key, opts]) => (
-              <div key={key} className="bg-gray-50 rounded-xl p-3">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <span className="material-symbols-outlined text-[14px] text-[#E84A27]">
-                    {key === "mood" ? "sentiment_satisfied" : key === "budget" ? "payments" : key === "time" ? "schedule" : "near_me"}
-                  </span>
-                  <span className="text-[11px] font-bold text-gray-700">{opts[0]}</span>
-                </div>
-                {opts.slice(1).map((opt) => {
-                  const isSelected = selectedOptions[key]?.includes(opt);
-                  return (
-                    <label key={opt} className="flex items-center gap-2 py-1 cursor-pointer group" onClick={() => toggleOption(key, opt)}>
-                      <div
-                        className={`w-4 h-4 rounded flex items-center justify-center transition-all border-2 ${
-                          isSelected ? "border-[#E84A27] bg-[#E84A27]" : "border-gray-300 group-hover:border-[#E84A27]"
-                        }`}
-                      >
-                        {isSelected && (
-                          <span className="material-symbols-outlined text-white text-[12px]" style={{ fontVariationSettings: "'wght' 700" }}>check</span>
-                        )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {aiDishes.map((dish) => (
+              <div
+                key={dish.id}
+                className="bg-white rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group"
+              >
+                <div>
+                  {/* Top Bar với Tag & Match % */}
+                  <div className="p-3 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
+                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                      {dish.tag}
+                    </span>
+                    <span className="text-[11px] font-black text-[#E84A27]">
+                      {dish.matchPct}% {dish.matchLabel}
+                    </span>
+                  </div>
+
+                  <div className="p-4 flex gap-4">
+                    {/* Ảnh món */}
+                    <img
+                      src={dish.image}
+                      alt={dish.name}
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shrink-0 shadow-sm border border-gray-100 group-hover:scale-105 transition-transform"
+                    />
+
+                    {/* Chi tiết món & quán */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-extrabold text-[15px] text-gray-900 group-hover:text-[#E84A27] transition-colors leading-snug truncate">
+                        {dish.name}
+                      </h3>
+                      <p className="text-[12px] font-bold text-gray-700 mt-0.5">{dish.restaurant}</p>
+                      
+                      <div className="flex items-center gap-2 text-[12px] mt-2">
+                        <span className="font-black text-[#E84A27]">{dish.price}</span>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-amber-500 font-bold">★ {dish.rating}</span>
+                        <span className="text-gray-400 text-[11px]">({dish.reviews})</span>
                       </div>
-                      <span className={`text-[11px] ${isSelected ? "text-[#E84A27] font-semibold" : "text-gray-600"}`}>{opt}</span>
-                    </label>
-                  );
-                })}
+
+                      <div className="flex items-center gap-3 text-[11px] text-gray-500 mt-2">
+                        <span className="flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[13px] text-[#E84A27]">distance</span>
+                          {dish.distanceKm} km
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[13px] text-blue-600">two_wheeler</span>
+                          {dish.bikeMin} phút
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Lý do AI gợi ý */}
+                  <div className="mx-4 mb-3 p-2.5 bg-orange-50/60 border border-orange-100 rounded-xl text-[11px] text-gray-700 leading-relaxed">
+                    <strong className="text-[#E84A27] font-bold">💡 Lý do AI chọn: </strong>
+                    {dish.aiReason}
+                  </div>
+                </div>
+
+                {/* Nút chỉ đường */}
+                <div className="p-4 pt-0">
+                  <button
+                    onClick={() => navigate('/', { state: { selectedPlaceId: dish.placeId } })}
+                    className="w-full flex items-center justify-center gap-2 h-9 rounded-full bg-[#E84A27] text-white text-[12px] font-bold hover:bg-[#c93d1f] shadow-md shadow-[#E84A27]/20 transition-all hover:scale-[1.01]"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">near_me</span>
+                    Chỉ đường tới quán ngay ({dish.distanceKm} km)
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* AI Results */}
-        {showResult && (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-extrabold text-[16px] text-gray-900 flex items-center gap-2">
-                ✨ AI CHỌN TỰ ĐỘNG THEO THỜI ĐIỂM
-              </h3>
-              <span className="text-[13px] text-gray-500">Top 4 Món Chuẩn Vị Nhất Lúc Này</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-gray-500">U tiên: Gần nhất & Điểm hài lòng cao</span>
-                <button className="text-[11px] text-[#E84A27] font-bold hover:underline">🔄 Làm mới đề xuất</button>
+        {/* Tính Năng Thú Vị: Bốc Quẻ Ẩm Thực (Lucky Decision) */}
+        <div className="bg-gradient-to-br from-orange-500/10 via-amber-400/10 to-white border border-orange-200/90 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex-1">
+            <div className="inline-flex items-center gap-1.5 bg-orange-100 text-[#E84A27] text-[10px] font-black px-2.5 py-0.5 rounded-full mb-2 uppercase">
+              🎲 Không cần nghĩ ngợi
+            </div>
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+              Bốc Quẻ Vị Giác: Ăn Gì Để Vũ Trụ Lo!
+            </h2>
+            <p className="text-[12px] text-gray-600 mt-1 max-w-lg leading-relaxed">
+              Bạn mất hơn 15 phút mà vẫn chưa chốt được ăn gì? Nhấn bốc quẻ ngay để AI chọn ngẫu nhiên một món ngon có điểm đánh giá từ 4.5 sao trở lên trong khu vực của bạn.
+            </p>
+
+            <button
+              onClick={handleLuckySpin}
+              disabled={isSpinning}
+              className="mt-4 flex items-center gap-2 bg-[#E84A27] text-white font-black text-[13px] px-6 py-2.5 rounded-full shadow-lg shadow-[#E84A27]/25 hover:bg-[#c93d1f] transition-all hover:scale-105 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {isSpinning ? "casino" : "casino"}
+              </span>
+              {isSpinning ? "Đang quay số..." : "BỐC QUẺ NGẪU NHIÊN"}
+            </button>
+          </div>
+
+          {/* Quẻ hiển thị kết quả */}
+          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-md w-full md:w-80 shrink-0">
+            <div className="text-[10px] font-black text-[#E84A27] uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Quẻ trúng hôm nay</span>
+              <span className="text-gray-400 font-normal">Cách bạn {luckyDish.distanceKm} km</span>
+            </div>
+
+            <div className="flex items-center gap-3 mb-3">
+              <img
+                src={luckyDish.image}
+                alt={luckyDish.name}
+                className="w-16 h-16 rounded-xl object-cover shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="font-black text-[14px] text-gray-900 truncate">{luckyDish.name}</div>
+                <div className="text-[11px] text-gray-600 truncate">{luckyDish.restaurant}</div>
+                <div className="text-[11px] font-bold text-[#E84A27] mt-1">{luckyDish.price}</div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-              {aiDishes.map((dish) => (
-                <div key={dish.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all group hover-lift card-shine">
-                  {/* Status bar */}
-                  <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 border-b border-gray-100">
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-green-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                      {dish.tag}
-                    </span>
-                    <button className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-orange-50">
-                      <span className="material-symbols-outlined text-[14px] text-gray-500">bookmark</span>
-                    </button>
-                  </div>
-
-                  <div className="flex gap-0">
-                    {/* Image */}
-                    <div className="relative w-36 h-36 shrink-0 overflow-hidden">
-                      <img src={dish.image} alt={dish.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute bottom-2 left-2 bg-green-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full">
-                        {dish.matchPct}% {dish.matchLabel}
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 p-3">
-                      <h4 className="font-bold text-[13px] text-gray-900 mb-0.5 line-clamp-2">{dish.name}</h4>
-                      <p className="text-[11px] text-gray-500 mb-1.5">{dish.restaurant}</p>
-                      <div className="flex items-center gap-2 text-[11px] mb-1">
-                        <span className="text-yellow-500">⭐ {dish.rating}</span>
-                        <span className="text-gray-400">({dish.reviews}+)</span>
-                        <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">{dish.price}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] text-gray-500">
-                        <span className="material-symbols-outlined text-[12px]">place</span>
-                        {dish.distanceKm}km
-                        <span className="material-symbols-outlined text-[12px]">two_wheeler</span>
-                        {dish.bikeMin} phút xe máy
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* AI reason */}
-                  <div className="px-3 py-2 border-t border-gray-50">
-                    <p className="text-[11px] text-gray-600 leading-relaxed">
-                      <span className="text-[#E84A27] font-bold">⊙ Lý do AI chọn:</span> {dish.aiReason}
-                    </p>
-                  </div>
-
-                  {/* Buttons */}
-                  <div className="flex gap-2 px-3 pb-3 mt-1">
-                    <button
-                      onClick={() => navigate('/', { state: { selectedPlaceId: dish.placeId } })}
-                      className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-full bg-[#E84A27] text-white text-[11px] font-bold shadow-md hover:bg-[#c93d1f] transition-all hover:scale-[1.02] btn-press glow-primary-hover"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">directions</span>
-                      Chỉ đường ngay ({dish.distanceKm}km)
-                    </button>
-                    <button className="flex items-center justify-center gap-1.5 px-3 h-9 rounded-full border border-gray-200 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors">
-                      <span className="material-symbols-outlined text-[14px]">groups</span>
-                      Facebook Quán
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Lucky spin */}
-            <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-5 mb-8 hover-lift relative overflow-hidden animate-slideInUp" style={{ animationDelay: '0.2s' }}>
-              <div className="flex items-start gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[20px]">🎰</span>
-                    <span className="bg-orange-100 text-[#E84A27] text-[10px] font-extrabold px-2 py-0.5 rounded-full">ĐỘC QUÀ ẨM THỰC TỨC THÌ</span>
-                  </div>
-                  <h3 className="text-[20px] font-extrabold text-gray-900">Vẫn chưa biết ăn gì?</h3>
-                  <h4 className="text-[20px] font-extrabold text-[#E84A27]">Thử Vận May Giác!</h4>
-                  <p className="text-[12px] text-gray-600 mt-2 max-w-sm">
-                    Các cấu các ai có thể có đẩy chính xác nhất ý muốn "Hôm nay nên ăn gì được?". AI sẽ bé hoa ngẫu nhiên 1 món ăn được đánh giá làm truy hoa hơn 3 trong bán kính 3km quanh bạn.
-                  </p>
-                  <div className="flex items-center gap-4 mt-3">
-                    <div>
-                      <span className="text-[22px] font-extrabold text-gray-900">5.200+</span>
-                      <p className="text-[10px] text-gray-500">Lượt quay mỗi ngày</p>
-                    </div>
-                    <div>
-                      <span className="text-[22px] font-extrabold text-gray-900">97.8%</span>
-                      <p className="text-[10px] text-gray-500">Tỉ lệ thỏa sau khi thử</p>
-                    </div>
-                  </div>
-                  <button className="mt-3 flex items-center gap-2 bg-[#E84A27] text-white px-5 py-2.5 rounded-full font-bold text-[13px] shadow-lg shadow-[#E84A27]/30 hover:bg-[#c93d1f] transition-all hover:scale-105 animate-glow btn-press">
-                    🎰 BỐC QUẺ MÓN ĂN NGAY!
-                  </button>
-                </div>
-
-                <div className="shrink-0 text-right">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[11px] text-gray-500 font-medium">Kết Quả Bốc Quẻ Ngẫu Nhiên</span>
-                    <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Sắn sàng bắm quay</span>
-                  </div>
-                  <div className="flex items-center gap-3 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 w-56">
-                    <img
-                      src="https://images.unsplash.com/photo-1509722747041-616f39b57569?w=200&q=80"
-                      alt="lucky"
-                      className="w-14 h-14 rounded-xl object-cover"
-                    />
-                    <div>
-                      <span className="text-[10px] text-[#E84A27] font-extrabold">Quẻ hôm nay số #59</span>
-                      <p className="font-bold text-[12px] text-gray-900">Bánh Mì Chảo Bò Sốt Tiêu</p>
-                      <p className="text-[10px] text-gray-500">Tiêm Bánh Mì Chiều Lương Đinh Cua Cách 1.2km</p>
-                      <p className="text-[10px] text-gray-400 italic mt-1">"Hợp mệnh bao nhộn nay, sốt tiêu cay mặn, pate béo bùi, giòn rum chặm đủi!"</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-2 justify-end">
-                    <button
-                      onClick={() => navigate('/', { state: { selectedPlaceId: 2 } })}
-                      className="flex items-center gap-1 px-3 h-8 rounded-full bg-[#E84A27] text-white text-[11px] font-bold hover:bg-[#c93d1f] transition-all"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">directions</span>
-                      Chỉ đường tới quán ngay
-                    </button>
-                    <button className="flex items-center gap-1 px-3 h-8 rounded-full border border-gray-200 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors">
-                      Đổi món khác
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* AI Trends Pulse */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="material-symbols-outlined text-[16px] text-[#E84A27]">trending_up</span>
-                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">AI FOOD TRENDS PULSE</span>
-              </div>
-              <h3 className="font-extrabold text-[20px] text-gray-900 mb-1">Xu Hướng Vị Giác Bùng Nổ Tuần Này</h3>
-              <p className="text-[12px] text-gray-500 mb-4">Dựa trên 45.000+ lượt tìm lúc check-in ẩm thực tiến bản đồ của cộng đồng LOCALEATS 7 ngày qua.</p>
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { cat: "Trâu lâu đường phở", name: "Ga Nướng Sốt Phở Mai Cay Hàn Quốc", trend: "+85% Tuần này", desc: "Trào đường sắc sắt sắt điểm tại 30-23.5 Gb. Y5 Vòng hới-phố ma sốt phổ cay chuẩn tiếng đồng đài tuần ngày của ổng từ đầu...", nearby: 28, icon: "🥩" },
-                  { cat: "Healthy & Detox", name: "Sinh Tố Mắc Hoa Quả & Sữa Chua Lắc", trend: "+120% Tuần này", desc: "Gộp quả từ 11:00 đến 23:00 tại cả, ổng sầu quả đất gĩ nhẹ mà niêu đất lộc cây nước từ đây ăn bản ngon nhất...", nearby: 42, icon: "🥤" },
-                  { cat: "Lẩu & Âm thực", name: "Lẩu Riêu Cua Băp Bò Sườn Sụn Hà Nội", trend: "+44% Tuần này", desc: "Chuẩn VN định hướng ẩm thực điển hình phong phú đang được ưa chuộng lần xuất hiện đầu tháng...", nearby: 19, icon: "🍲" },
-                ].map((t) => (
-                  <div key={t.name} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all hover-lift card-shine">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[20px]">{t.icon}</span>
-                      <span className="text-[10px] font-bold text-gray-500 uppercase">{t.cat}</span>
-                    </div>
-                    <div className="text-green-600 font-bold text-[12px] mb-1">{t.trend}</div>
-                    <h4 className="font-bold text-[13px] text-gray-900 mb-1 leading-tight">{t.name}</h4>
-                    <p className="text-[11px] text-gray-500 line-clamp-2 mb-2">{t.desc}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-gray-600">🍽️ {t.nearby} quán bán quanh bạn</span>
-                    </div>
-                    <button
-                      onClick={() => navigate('/', { state: { selectedPlaceId: 1 } })}
-                      className="mt-2 w-full h-8 rounded-full border border-[#E84A27] text-[#E84A27] text-[11px] font-bold hover:bg-[#E84A27] hover:text-white transition-all flex items-center justify-center gap-1"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">directions</span>
-                      Tìm đồ gần nhất
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
+            <button
+              onClick={() => navigate('/', { state: { selectedPlaceId: luckyDish.placeId } })}
+              className="w-full flex items-center justify-center gap-1.5 h-8 rounded-full bg-gray-900 text-white text-[11px] font-bold hover:bg-[#E84A27] transition-all"
+            >
+              <span className="material-symbols-outlined text-[14px]">directions</span>
+              Đi ăn quán này ngay
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

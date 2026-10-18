@@ -41,12 +41,14 @@ const sidebarNavItems = [
     badge: "MỚI",
   },
   {
-    id: "direction",
-    label: "Tìm đường đa phương tiện",
-    path: "/",
+    id: "trip",
+    label: "Kế hoạch chuyến đi (Food Tour)",
+    path: "/trip",
     icon: "alt_route",
     iconColor: "text-[#F58A07]",
-    type: "normal",
+    badge: "MỚI",
+    badgeStyle: "smart",
+    type: "smart",
   },
   {
     id: "saved",
@@ -58,11 +60,13 @@ const sidebarNavItems = [
   },
   {
     id: "live",
-    label: "Mức độ sôi động Live",
+    label: "Livestream Quán Ăn Live",
     path: "/live",
-    icon: "analytics",
-    iconColor: "text-[#FF9F1C]",
-    type: "normal",
+    icon: "videocam",
+    iconColor: "text-red-500",
+    badge: "TRỰC TIẾP",
+    badgeStyle: "hot",
+    type: "hot",
   },
 ];
 

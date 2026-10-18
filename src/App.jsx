@@ -6,6 +6,9 @@ import HotListPage from "./pages/HotListPage";
 import AIPage from "./pages/AIPage";
 import VIPPage from "./pages/VIPPage";
 import SavedPage from "./pages/SavedPage";
+import ReviewPage from "./pages/ReviewPage";
+import LivePulsePage from "./pages/LivePulsePage";
+import TripPlannerPage from "./pages/TripPlannerPage";
 
 export default function App() {
   return (
@@ -24,6 +27,10 @@ export default function App() {
               <Route path="/ai" element={<AIPage />} />
               <Route path="/vip" element={<VIPPage />} />
               <Route path="/saved" element={<SavedPage />} />
+              <Route path="/review" element={<ReviewPage />} />
+              <Route path="/live" element={<LivePulsePage />} />
+              <Route path="/trip" element={<TripPlannerPage />} />
+              <Route path="/trip-planner" element={<TripPlannerPage />} />
               {/* Fallback for sidebar items not yet implemented */}
               <Route path="*" element={<HotListPage />} />
             </Routes>

@@ -2,307 +2,291 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { places, trendingFoods } from "../data/places";
 
-const tabOptions = [
-  { id: "today", label: "Hôm nay (Live)" },
-  { id: "week", label: "Tuần này" },
-  { id: "month", label: "Tháng này" },
+const timeTabs = [
+  { id: "today", label: "24h Qua (Live)", icon: "bolt" },
+  { id: "week", label: "Tuần Này", icon: "date_range" },
+  { id: "month", label: "Tháng Này", icon: "calendar_today" },
 ];
 
 export default function HotListPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("week");
-  const [viewMode, setViewMode] = useState("district");
-  const [visibleCount, setVisibleCount] = useState(5);
+  const [districtFilter, setDistrictFilter] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(6);
 
-  const hotPlaces = [...places].sort((a, b) => b.votes - a.votes);
+  // Danh sách các quận có trong dữ liệu
+  const districts = ["all", ...new Set(places.map((p) => p.district || "Quận 1"))];
+
+  // Sắp xếp quán ăn theo độ hot (votes + rating)
+  const sortedPlaces = [...places]
+    .sort((a, b) => b.votes - a.votes)
+    .filter((p) => districtFilter === "all" || (p.district || "Quận 1") === districtFilter);
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar bg-[#FDFBF7] page-enter">
-      {/* Live banner */}
-      <div className="bg-gradient-to-r from-red-50 to-orange-50 border-b border-orange-200/60 px-6 py-2 flex items-center gap-2 shimmer">
-        <span className="flex items-center gap-1 text-[#E84A27] font-bold text-[11px]">
-          <span className="w-2 h-2 bg-[#E84A27] rounded-full live-dot"></span>
-          LIVE REAL-TIME
+    <div className="flex-1 overflow-y-auto no-scrollbar bg-[#FDFBF7] page-enter pb-16">
+      {/* Tín hiệu Live Real-time */}
+      <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-red-500/10 border-b border-orange-200/80 px-6 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E84A27] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#E84A27]"></span>
+          </span>
+          <span className="text-[11px] font-black text-[#E84A27] tracking-wider uppercase">Live Real-time</span>
+          <span className="text-[11px] text-gray-700 hidden sm:inline">
+            Hơn 3.420 lượt tìm đường & check-in GPS được ghi nhận trong 1 giờ qua
+          </span>
+        </div>
+        <span className="text-[10px] font-semibold text-gray-500 bg-white/80 px-2 py-0.5 rounded-full border border-gray-200">
+          Tự động đồng bộ mỗi 60s
         </span>
-        <span className="text-[11px] text-gray-700 flex-1">
-          Hệ thống vừa ghi nhận 2.840+ lượt định vị chỉ đường trong 15 phút qua tại khu vực Quận 4 & Quận 1…
-        </span>
-        <span className="text-[10px] text-gray-500 font-medium whitespace-nowrap">🔄 Cập nhật mỗi 60 giây</span>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-6">
-        {/* Page header */}
-        <div className="flex items-start justify-between mb-6 animate-fadeIn">
+      <div className="max-w-6xl mx-auto px-6 py-6">
+        {/* Tiêu đề & Bộ lọc thời gian */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 animate-fadeIn">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="bg-orange-100 text-[#E84A27] text-[10px] font-extrabold px-2 py-0.5 rounded-full badge-wiggle">🏆 BẢNG XẾP HẠNG ẨM THỰC SÔI ĐỘNG NHẤT 24H</span>
+            <div className="inline-flex items-center gap-1.5 bg-red-100 text-[#E84A27] text-[11px] font-extrabold px-3 py-1 rounded-full mb-2">
+              <span className="material-symbols-outlined text-[15px]">local_fire_department</span>
+              BẢNG XẾP HẠNG ẨM THỰC THỊNH HÀNH
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 leading-tight">
-              Quán Ăn & Món Ngon
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              Quán Ăn & Món Ngon <span className="gradient-text-premium">Đang Gây Bão</span>
             </h1>
-            <h2 className="text-3xl font-extrabold leading-tight gradient-text-premium">
-              Đang Gây Bão Cộng Đồng LOCALEATS
-            </h2>
-            <p className="text-[13px] text-gray-600 mt-2 max-w-2xl">
-              Tổng hợp dữ liệu thực tế dựa trên lưu lượng tìm kiếm, tần suất chỉ đường trực tiếp tới quán và lượt check-in ẩm thực bùng nổ của cư dân bản địa.
+            <p className="text-[13px] text-gray-600 mt-1 max-w-2xl leading-relaxed">
+              Xếp hạng khách quan dựa trên mật độ chỉ đường GPS thực tế, đánh giá cộng đồng và tần suất nhắc đến trên mạng xã hội tại TP.HCM.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex bg-gray-100 rounded-full p-1">
-              {tabOptions.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
-                  className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all ${
-                    activeTab === t.id ? "bg-[#E84A27] text-white shadow-md shadow-[#E84A27]/25" : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setViewMode(viewMode === "district" ? "all" : "district")}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700 hover:bg-gray-50 hover:border-[#E84A27]/30 transition-all"
-            >
-              <span className="material-symbols-outlined text-[16px]">filter_list</span>
-              Theo Quận
-            </button>
+
+          {/* Time range selector */}
+          <div className="flex items-center bg-white border border-gray-200 p-1 rounded-full shadow-sm">
+            {timeTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-bold transition-all ${
+                  activeTab === tab.id
+                    ? "bg-[#E84A27] text-white shadow-md shadow-[#E84A27]/25"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[15px]">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Top 10 leaderboard */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8 hover-lift glass-card">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-            <h3 className="font-bold text-[13px] text-gray-800 flex items-center gap-2">
-              🥇 Top 1 đến Top 10 Quán Ăn Dẫn Đầu Trào Lưu
-            </h3>
-            <span className="text-[11px] text-gray-500 flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">gps_fixed</span>
-              Dữ liệu GPS & Chỉ đường 1-chạm thời gian thực
-            </span>
-          </div>
-
-          {/* Table header */}
-          <div className="grid grid-cols-[60px_1fr_160px_140px_100px] gap-4 px-5 py-2 bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-            <span>Hạng</span>
-            <span>Quán & Món đặc trưng</span>
-            <span>Tăng trưởng GPS</span>
-            <span>Đánh giá thực tế</span>
-            <span>Điều hướng</span>
-          </div>
-
-          {hotPlaces.slice(0, visibleCount).map((p, i) => (
-            <div
-              key={p.id}
-              className="grid grid-cols-[60px_1fr_160px_140px_100px] gap-4 px-5 py-3.5 border-t border-gray-50 hover:bg-orange-50/50 transition-all items-center group card-shine"
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              {/* Rank */}
-              <div className="flex items-center justify-center">
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center font-extrabold text-[15px] transition-all group-hover:scale-110 ${
-                    i === 0
-                      ? "bg-gradient-to-br from-yellow-300 to-yellow-500 text-white shadow-md shadow-yellow-400/40 glow-golden"
-                      : i === 1
-                      ? "bg-gradient-to-br from-gray-200 to-gray-400 text-white shadow-md"
-                      : i === 2
-                      ? "bg-gradient-to-br from-amber-500 to-amber-700 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  #{i + 1}
-                </div>
-              </div>
-
-              {/* Restaurant info */}
-              <div className="flex items-center gap-3">
-                <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover group-hover:scale-105 transition-transform" />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[13px] text-gray-900 group-hover:text-[#E84A27] transition-colors">{p.name}</span>
-                    {i < 3 && (
-                      <span className="bg-[#E84A27] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full badge-wiggle">
-                        {i === 0 ? "QUÁN QUÁN" : i === 1 ? "HẠNG BẠC" : "HẠNG ĐỒNG"}
-                      </span>
-                    )}
-                    <span className="bg-gray-100 text-gray-600 text-[9px] font-medium px-1.5 py-0.5 rounded-full">{p.district || "Quận 1"}</span>
-                  </div>
-                  <p className="text-[11px] text-gray-500 mt-0.5">{p.specialty}</p>
-                  <p className="text-[11px] text-gray-400 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[12px]">place</span>
-                    {p.address} • Cách bạn {p.distanceKm} km
-                  </p>
-                </div>
-              </div>
-
-              {/* GPS Growth */}
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-green-500 text-[13px]">📈</span>
-                  <span className="text-[#E84A27] font-extrabold text-[13px] gradient-text">{p.trend}</span>
-                </div>
-                <p className="text-[11px] text-gray-500 mt-0.5">{p.votes?.toLocaleString()} lượt tìm kiếm</p>
-              </div>
-
-              {/* Rating */}
-              <div>
-                <div className="flex items-center gap-1">
-                  <span className="text-yellow-400">⭐</span>
-                  <span className="font-bold text-[13px]">{p.rating}</span>
-                  <span className="text-[11px] text-gray-500">({(p.reviews / 1000).toFixed(1)}k)</span>
-                </div>
-                <p className="text-[11px] text-gray-500 mt-0.5">
-                  {p.openNow ? "🟢 Mở đến " + p.closeAt : "🔴 Đóng cửa"}
-                </p>
-              </div>
-
-              {/* Navigation */}
-              <button
-                onClick={() => navigate('/', { state: { selectedPlaceId: p.id } })}
-                className="flex items-center gap-1.5 bg-[#E84A27] text-white px-3 py-2 rounded-full text-[11px] font-bold hover:bg-[#c93d1f] transition-all hover:scale-105 shadow-md shadow-[#E84A27]/25 opacity-0 group-hover:opacity-100 btn-press"
-              >
-                <span className="material-symbols-outlined text-[14px]">directions</span>
-                Chỉ đường
-              </button>
-            </div>
-          ))}
-
-          <div className="px-5 py-3 flex items-center justify-between border-t border-gray-100">
-            {visibleCount < hotPlaces.length ? (
-              <button
-                onClick={() => setVisibleCount((prev) => Math.min(prev + 5, hotPlaces.length))}
-                className="text-[12px] text-[#E84A27] font-bold flex items-center gap-1 hover:underline transition-all hover:gap-2"
-              >
-                <span className="material-symbols-outlined text-[16px]">expand_more</span>
-                Xem thêm ({hotPlaces.length - visibleCount} quán còn lại)
-              </button>
-            ) : (
-              <span className="text-[12px] text-green-600 font-bold flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                Đã hiển thị tất cả {hotPlaces.length} quán
-              </span>
-            )}
-            <span className="text-[11px] text-gray-500">{Math.min(visibleCount, hotPlaces.length)}/{hotPlaces.length} quán cập nhật Live GPS</span>
-          </div>
-        </div>
-
-        {/* Trending foods section */}
-        <div className="mb-8 animate-slideInUp" style={{ animationDelay: '0.2s' }}>
+        {/* Món ăn bắt trend nổi bật (Cards Carousel trực quan) */}
+        <div className="mb-10 animate-slideInUp">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-extrabold text-[18px] text-gray-900 flex items-center gap-2">
-              🍽️ Món Ăn Bắt Trend Đang Càn Quét MXH
-            </h3>
-            <span className="text-[11px] text-gray-500 flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full">
-              ✨ Dữ liệu ẩm thực TikTok & Threads tuần này
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#E84A27] text-[22px]">trending_up</span>
+              <h2 className="text-[18px] font-extrabold text-gray-900">Món Ăn Bắt Trend Mạng Xã Hội</h2>
+            </div>
+            <span className="text-[11px] text-gray-500 font-medium">Xu hướng ẩm thực tuần này</span>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {trendingFoods.map((food, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {trendingFoods.map((food, idx) => (
               <div
                 key={food.id}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all group cursor-pointer hover-lift card-shine"
-                style={{ animationDelay: `${i * 80}ms` }}
+                className="bg-white rounded-2xl overflow-hidden border border-gray-200/80 shadow-sm hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between"
               >
-                <div className="relative h-36 overflow-hidden">
-                  <img src={food.image} alt={food.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute top-2 left-2 bg-[#E84A27] text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shadow-lg shadow-[#E84A27]/30">
-                    #{food.rank} {food.tag.toUpperCase()}
+                <div className="relative h-40 overflow-hidden bg-gray-100">
+                  <img
+                    src={food.image}
+                    alt={food.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute top-2.5 left-2.5 bg-[#E84A27] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md">
+                    TOP #{idx + 1}
                   </div>
-                  <div className="absolute top-2 right-2 bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                  <div className="absolute top-2.5 right-2.5 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-0.5">
+                    <span className="material-symbols-outlined text-[12px]">north_east</span>
                     {food.trend}
                   </div>
                 </div>
-                <div className="p-3">
-                  <h4 className="font-bold text-[13px] text-gray-900 mb-1 group-hover:text-[#E84A27] transition-colors">{food.name}</h4>
-                  <p className="text-[11px] text-gray-500 mb-2 line-clamp-2">{food.desc}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-gray-600">🍽️ {food.nearbyCount} quán bán quanh bạn</span>
-                    <span className="text-[11px] text-gray-400">{food.weekOrders}</span>
+
+                <div className="p-3.5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-extrabold text-[14px] text-gray-900 group-hover:text-[#E84A27] transition-colors mb-1 line-clamp-1">
+                      {food.name}
+                    </h3>
+                    <p className="text-[11px] text-gray-500 leading-snug line-clamp-2 mb-3">
+                      {food.desc}
+                    </p>
                   </div>
-                  <button
-                    onClick={() => navigate('/', { state: { selectedPlaceId: food.id } })}
-                    className="mt-2 w-full flex items-center justify-center gap-1.5 h-8 rounded-full border border-[#E84A27] text-[#E84A27] text-[11px] font-bold hover:bg-[#E84A27] hover:text-white transition-all btn-press hover:shadow-md hover:shadow-[#E84A27]/25"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">directions</span>
-                    Tìm quán gần nhất
-                  </button>
+
+                  <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                    <span className="text-gray-500 font-medium">
+                      📍 {food.nearbyCount} quán lân cận
+                    </span>
+                    <button
+                      onClick={() => navigate('/', { state: { selectedPlaceId: food.id } })}
+                      className="font-bold text-[#E84A27] hover:underline flex items-center gap-0.5"
+                    >
+                      Xem quán <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Heat map section */}
-        <div className="grid grid-cols-2 gap-6 animate-slideInUp" style={{ animationDelay: '0.3s' }}>
-          {/* District heatmap */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover-lift">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-bold text-[14px] text-gray-900">🗺️ Bản Đồ Nhiệt Check-In Theo Quận</h4>
-              <span className="text-[10px] text-[#E84A27] font-bold bg-red-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-[#E84A27] rounded-full live-dot"></span>
-                Live GPS
-              </span>
+        {/* Bảng Xếp Hạng Trực Quan Top Quán Ăn Dẫn Đầu */}
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden mb-8 animate-slideInUp">
+          {/* Header Bảng */}
+          <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-[17px] font-extrabold text-gray-900 flex items-center gap-2">
+                <span>🏆</span> Bảng Xếp Hạng Quán Ăn Dẫn Đầu Lượt Đến
+              </h2>
+              <p className="text-[11px] text-gray-500 mt-0.5">Dữ liệu được xác thực bởi tần suất di chuyển GPS thực tế</p>
             </div>
-            <p className="text-[11px] text-gray-500 mb-3">Mật độ khách ăn uống thực tế tại các tuyến phố ẩm thực lớn ngay thời điểm hiện tại:</p>
-            {[
-              { district: "Q4", name: "Phố Ẩm Thực Vĩnh Khánh", desc: "Hơn 85 quán hải sản & nướng vỉa hè mở cửa", level: 96, levelLabel: "CỰC ĐÔNG", levelColor: "bg-red-500" },
-              { district: "PN", name: "Khu Ẩm Thực Phan Xích Long", desc: "Thiên đường lẩu, đồ nướng, trà sữa", level: 82, levelLabel: "NHỘN NHỊP", levelColor: "bg-orange-400" },
-              { district: "Q10", name: "Phố Ẩm Thực Đêm Hồ Thị Kỷ", desc: "Ẩm thực Campuchia, đồ nướng xiên que", level: 78, levelLabel: "TẤP NẬP", levelColor: "bg-yellow-400" },
-            ].map((d) => (
-              <div key={d.district} className="flex items-center gap-3 py-2.5 border-t border-gray-50 hover:bg-orange-50/50 transition-colors rounded-lg px-1 group">
-                <div className="w-8 h-8 rounded-full bg-orange-100 text-[#E84A27] text-[11px] font-extrabold flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                  {d.district}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[12px] text-gray-800">{d.name}</span>
-                    <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full ${d.levelColor} animate-pulse`}>
-                      {d.levelLabel} {d.level}%
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-gray-500 truncate">{d.desc}</p>
-                  {/* Progress bar */}
-                  <div className="mt-1.5 h-1 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${d.levelColor} progress-animated`}
-                      style={{ width: `${d.level}%`, transition: 'width 1s ease-out' }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <button className="mt-3 text-[12px] text-[#E84A27] font-semibold flex items-center gap-1 hover:underline">
-              Bạn muốn tìm quán ở quận khác? Xem bản đồ nhiệt tổng thể →
-            </button>
-          </div>
 
-          {/* Tips card */}
-          <div className="bg-gradient-to-br from-[#E84A27] to-[#FF9F1C] rounded-2xl p-5 text-white hover-lift relative overflow-hidden">
-            {/* Decorative circles */}
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-xl"></div>
-            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/5 rounded-full blur-lg"></div>
-
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="material-symbols-outlined text-[18px]">gps_fixed</span>
-                <h4 className="font-bold text-[14px]">🎯 Bí Kíp Săn Quán Hot Cùng LOCALEATS</h4>
-              </div>
-              <p className="text-[12px] text-white/80 mb-4">
-                Đi ăn quán nổi tiếng không lo chờ đợi và có trải nghiệm ẩm thực tốt nhất tại đây.
-              </p>
-              {[
-                { icon: "schedule", tip: "Giờ vàng tránh xếp hàng: Nên đến sớm trước 18:00 hoặc sau 20:30 tại các quán Top 1-3 để đã có bàn ngồi thoải mái và đồ ăn tươi nhất." },
-                { icon: "two_wheeler", tip: "Ưu tiên di chuyển xe máy: Đa số quán ăn truyền thống danh tiếng tọa lạc trong các ngõ hẻm ẩm thực đặc trưng của Sài Gòn." },
-                { icon: "location_on", tip: "Định vị chính xác cửa vào: LOCALEATS dẫn đường tới chính xác cổng vào xe hoặc hẻm, hạn chế xe đi lạc và quán nhái thương hiệu nổi tiếng cùng phố." },
-              ].map((t) => (
-                <div key={t.icon} className="flex items-start gap-2 mb-2 group">
-                  <span className="material-symbols-outlined text-[16px] text-white/80 mt-0.5 group-hover:scale-110 transition-transform">{t.icon}</span>
-                  <p className="text-[11px] text-white/90 leading-relaxed">{t.tip}</p>
-                </div>
+            {/* Bộ lọc Quận */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <span className="text-[11px] font-bold text-gray-500 whitespace-nowrap mr-1">Khu vực:</span>
+              {districts.map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDistrictFilter(d)}
+                  className={`text-[11px] font-bold px-3 py-1 rounded-full whitespace-nowrap transition-all ${
+                    districtFilter === d
+                      ? "bg-[#E84A27] text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {d === "all" ? "Tất cả quận" : d}
+                </button>
               ))}
             </div>
+          </div>
+
+          {/* Danh sách các quán (Visual Cards Row) */}
+          <div className="divide-y divide-gray-100">
+            {sortedPlaces.slice(0, visibleCount).map((place, index) => {
+              const rank = index + 1;
+              const isTop3 = rank <= 3;
+
+              return (
+                <div
+                  key={place.id}
+                  className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-orange-50/40 transition-colors group"
+                >
+                  {/* Trái: Hạng + Hình ảnh + Thông tin quán */}
+                  <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                    {/* Rank Badge */}
+                    <div
+                      className={`w-9 h-9 shrink-0 rounded-2xl flex items-center justify-center font-black text-[15px] shadow-sm ${
+                        rank === 1
+                          ? "bg-gradient-to-br from-amber-400 to-yellow-500 text-white ring-2 ring-amber-300"
+                          : rank === 2
+                          ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
+                          : rank === 3
+                          ? "bg-gradient-to-br from-orange-400 to-amber-600 text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {rank}
+                    </div>
+
+                    {/* Image */}
+                    <img
+                      src={place.image}
+                      alt={place.name}
+                      className="w-14 h-14 rounded-xl object-cover shrink-0 shadow-sm border border-gray-100 group-hover:scale-105 transition-transform"
+                    />
+
+                    {/* Details */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-extrabold text-[15px] text-gray-900 group-hover:text-[#E84A27] transition-colors truncate">
+                          {place.name}
+                        </h3>
+                        {isTop3 && (
+                          <span className="bg-red-50 text-[#E84A27] text-[9px] font-black px-2 py-0.5 rounded-full border border-red-200">
+                            {rank === 1 ? "QUÁN ĐẦU BẢNG" : rank === 2 ? "HẠNG 2" : "HẠNG 3"}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                          {place.category}
+                        </span>
+                      </div>
+
+                      <p className="text-[12px] text-gray-600 truncate mt-0.5">
+                        {place.specialty}
+                      </p>
+
+                      <div className="flex items-center gap-3 text-[11px] text-gray-400 mt-1">
+                        <span className="flex items-center gap-0.5 text-gray-500">
+                          <span className="material-symbols-outlined text-[13px] text-[#E84A27]">location_on</span>
+                          {place.address}
+                        </span>
+                        <span>•</span>
+                        <span className="text-gray-500">Khoảng cách: <strong>{place.distanceKm} km</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Giữa & Phải: Tăng trưởng & Thao tác */}
+                  <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-8 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-100">
+                    {/* Tăng trưởng */}
+                    <div className="text-left sm:text-right">
+                      <div className="flex items-center sm:justify-end gap-1 text-emerald-600 font-black text-[13px]">
+                        <span className="material-symbols-outlined text-[15px]">trending_up</span>
+                        {place.trend}
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">
+                        {place.votes?.toLocaleString()} lượt điều hướng
+                      </div>
+                    </div>
+
+                    {/* Điểm đánh giá */}
+                    <div className="text-center sm:text-right">
+                      <div className="flex items-center sm:justify-end gap-1 font-extrabold text-gray-900 text-[14px]">
+                        <span className="text-amber-500">★</span> {place.rating}
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">
+                        {place.reviews?.toLocaleString()} reviews
+                      </div>
+                    </div>
+
+                    {/* Nút chỉ đường */}
+                    <button
+                      onClick={() => navigate('/', { state: { selectedPlaceId: place.id } })}
+                      className="flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#E84A27] text-white text-[11px] font-bold hover:bg-[#c93d1f] shadow-md shadow-[#E84A27]/20 transition-all hover:scale-105 active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">near_me</span>
+                      Chỉ đường
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Footer bảng */}
+          <div className="px-6 py-4 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-[12px] text-gray-500 font-medium">
+              Đang hiển thị {Math.min(visibleCount, sortedPlaces.length)} / {sortedPlaces.length} quán hot
+            </span>
+
+            {visibleCount < sortedPlaces.length ? (
+              <button
+                onClick={() => setVisibleCount((prev) => Math.min(prev + 5, sortedPlaces.length))}
+                className="text-[12px] font-bold text-[#E84A27] hover:underline flex items-center gap-1"
+              >
+                Xem thêm quán tiếp theo
+                <span className="material-symbols-outlined text-[16px]">expand_more</span>
+              </button>
+            ) : (
+              <span className="text-[12px] font-bold text-emerald-600 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                Đã tải toàn bộ bảng xếp hạng
+              </span>
+            )}
           </div>
         </div>
       </div>

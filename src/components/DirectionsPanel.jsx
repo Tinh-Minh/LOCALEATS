@@ -62,6 +62,8 @@ export default function DirectionsPanel({
   destination,
   onClose,
   placeName,
+  onCancelItinerary,
+  isItineraryTour,
 }) {
   const [expandedStep, setExpandedStep] = useState(null);
   const [showOriginPicker, setShowOriginPicker] = useState(false);
@@ -163,11 +165,30 @@ export default function DirectionsPanel({
         </div>
         <button
           onClick={onClose}
+          title={isItineraryTour ? "Hủy lộ trình và quay lại Kế hoạch chuyến đi" : "Đóng chỉ đường"}
           className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all hover:rotate-90"
         >
           <span className="material-symbols-outlined text-white text-base">close</span>
         </button>
       </div>
+
+      {/* Thông báo Food Tour đa điểm dừng kèm nút Hủy/Sửa lộ trình */}
+      {isItineraryTour && (
+        <div className="bg-cyan-50 border-b border-cyan-200/80 px-3.5 py-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-cyan-800 min-w-0">
+            <span className="material-symbols-outlined text-cyan-600 text-sm shrink-0">alt_route</span>
+            <span className="truncate">Lộ trình Food Tour nhiều chặng</span>
+          </div>
+          <button
+            onClick={onCancelItinerary}
+            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-100 hover:bg-red-500 text-red-700 hover:text-white font-extrabold text-[10px] transition-all"
+            title="Xóa toàn bộ lộ trình hiện tại và quay về màn hình Lập kế hoạch"
+          >
+            <span className="material-symbols-outlined text-[13px]">delete</span>
+            <span>Xóa lộ trình</span>
+          </button>
+        </div>
+      )}
 
       {/* Loading state */}
       {isRouting && (
@@ -194,23 +215,43 @@ export default function DirectionsPanel({
       {/* Route data */}
       {routeData && !isRouting && (
         <>
-          {/* Transport mode switcher */}
+          {/* Transport mode switcher with real calculated times */}
           <div className="px-3 pt-3 pb-2">
             <div className="flex gap-1.5 bg-gray-100/80 rounded-xl p-1">
-              {TRANSPORT_MODES.map((mode) => (
-                <button
-                  key={mode.id}
-                  onClick={() => onSwitchMode(mode.id)}
-                  className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-bold transition-all ${
-                    transportMode === mode.id
-                      ? "bg-[#E84A27] text-white shadow-md shadow-[#E84A27]/30"
-                      : "text-gray-600 hover:bg-white hover:shadow-sm"
-                  }`}
-                >
-                  <span className="text-sm">{mode.icon}</span>
-                  {mode.label}
-                </button>
-              ))}
+              {TRANSPORT_MODES.map((mode) => {
+                // Tính nhanh thời gian dự kiến cho từng phương tiện dựa trên cự ly thực tế
+                const baseDist = routeData?.summary?.rawDistance || 2000;
+                let estimatedMins = 0;
+                if (mode.id === "walk") {
+                  estimatedMins = Math.max(1, Math.round((baseDist * 0.95) / (1.33 * 60)));
+                } else if (mode.id === "car") {
+                  estimatedMins = Math.max(1, Math.round((baseDist * 1.12) / (5.0 * 60)));
+                } else {
+                  estimatedMins = Math.max(1, Math.round(baseDist / (6.94 * 60)));
+                }
+
+                const timeDisplay = estimatedMins < 60 ? `${estimatedMins}p` : `${Math.floor(estimatedMins / 60)}h${estimatedMins % 60}p`;
+
+                return (
+                  <button
+                    key={mode.id}
+                    onClick={() => onSwitchMode(mode.id)}
+                    className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg transition-all ${
+                      transportMode === mode.id
+                        ? "bg-[#E84A27] text-white shadow-md shadow-[#E84A27]/30"
+                        : "text-gray-700 hover:bg-white hover:shadow-sm"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm">{mode.icon}</span>
+                      <span className="text-[11px] font-bold">{mode.label}</span>
+                    </div>
+                    <span className={`text-[10px] font-semibold mt-0.5 ${transportMode === mode.id ? "text-white/90" : "text-gray-500"}`}>
+                      ~{timeDisplay}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

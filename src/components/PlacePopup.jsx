@@ -1,15 +1,74 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function PlacePopup({ place, onClose, onStartRoute, isRouting }) {
+// Tính khoảng cách theo công thức Haversine giữa 2 tọa độ (km)
+function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Bán kính Trái Đất (km)
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+export default function PlacePopup({ place, userLocation, onClose, onStartRoute, isRouting }) {
   const navigate = useNavigate();
   const [selectedMode, setSelectedMode] = useState("bike");
   if (!place) return null;
 
+  // Tính khoảng cách đường thực tế (tính hệ số vòng vèo đường phố ~ 1.3x)
+  let directDistanceKm = place.distanceKm || 1.2;
+  if (userLocation?.lat && userLocation?.lng && place.lat && place.lng) {
+    const rawDist = calculateHaversineDistance(
+      userLocation.lat,
+      userLocation.lng,
+      place.lat,
+      place.lng
+    );
+    // Nhân hệ số đường phố quanh co 1.35x
+    directDistanceKm = Math.max(0.3, Number((rawDist * 1.35).toFixed(1)));
+  }
+
+  // Vận tốc thực tế đô thị:
+  // - Xe máy (bike): ~24 km/h -> ~2.5 phút/km
+  // - Ô tô (car): ~18 km/h -> ~3.3 phút/km (quãng đường dài hơn 1.15x do đường 1 chiều)
+  // - Đi bộ (walk): ~4.8 km/h -> ~12.5 phút/km
+  const bikeDistKm = directDistanceKm;
+  const bikeMins = Math.max(1, Math.round(bikeDistKm * 2.5));
+
+  const carDistKm = Number((directDistanceKm * 1.15).toFixed(1));
+  const carMins = Math.max(2, Math.round(carDistKm * 3.3));
+
+  const walkDistKm = Number((directDistanceKm * 0.95).toFixed(1));
+  const walkMins = Math.max(1, Math.round(walkDistKm * 12.5));
+
   const modes = [
-    { id: "bike", icon: "🏍️", label: "Xe máy", time: `${place.bikeMin} phút`, dist: `${place.distanceKm} km` },
-    { id: "car", icon: "🚗", label: "Ô tô", time: `${place.carMin} phút`, dist: `${(place.distanceKm * 1.14).toFixed(1)} km` },
-    { id: "walk", icon: "🚶", label: "Đi bộ", time: `${place.walkMin} phút`, dist: `${(place.distanceKm * 0.83).toFixed(1)} km` },
+    {
+      id: "bike",
+      icon: "🏍️",
+      label: "Xe máy",
+      time: `${bikeMins} phút`,
+      dist: `${bikeDistKm} km`,
+    },
+    {
+      id: "car",
+      icon: "🚗",
+      label: "Ô tô",
+      time: `${carMins} phút`,
+      dist: `${carDistKm} km`,
+    },
+    {
+      id: "walk",
+      icon: "🚶",
+      label: "Đi bộ",
+      time: walkMins >= 60 ? `${Math.floor(walkMins / 60)}h ${walkMins % 60}p` : `${walkMins} phút`,
+      dist: `${walkDistKm} km`,
+    },
   ];
 
   const handleStartRoute = () => {
