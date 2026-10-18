@@ -1,5 +1,6 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { Map, Marker, NavigationControl } from "react-map-gl/maplibre";
+import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import FoodPin from "./FoodPin";
 import RouteLayer from "./RouteLayer";
@@ -74,6 +75,7 @@ const MapView = forwardRef(function MapView(
     <div className="absolute inset-0">
       <Map
         ref={mapRef}
+        mapLib={maplibregl}
         mapStyle={MAP_STYLE}
         attributionControl={false}
         onClick={(e) => {
