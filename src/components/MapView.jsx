@@ -9,8 +9,8 @@ import RouteLayer from "./RouteLayer";
 
 setWorkerUrl(workerUrl);
 
-// Bản đồ Vector Carto Positron siêu nhẹ, tải nhanh, hiển thị đầy đủ chi tiết đường sá và đảm bảo vẽ đè các lớp tuyến đường rõ ràng
-const MAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+// Bản đồ Vector OpenFreeMap Liberty hiển thị chi tiết các tòa nhà, đường phố và địa danh
+const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
 const MapView = forwardRef(function MapView(
   { places, selectedId, onSelect, onMapClick, routeData, transportMode, userLocation, itineraryStops = [] },
