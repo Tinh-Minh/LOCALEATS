@@ -16,6 +16,17 @@ body {
   overflow: hidden;
 }
 
+/* Ensure maplibre canvas renders properly with correct height & z-index */
+.maplibregl-map {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.maplibregl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* Smooth scrolling for all scrollable containers */
 html, body, [class*="overflow"] {
   scroll-behavior: smooth;
