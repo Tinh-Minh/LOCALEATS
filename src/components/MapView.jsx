@@ -1,9 +1,13 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { Map, Marker, NavigationControl } from "react-map-gl/maplibre";
 import * as maplibregl from "maplibre-gl";
+import { setWorkerUrl } from "maplibre-gl";
+import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
 import FoodPin from "./FoodPin";
 import RouteLayer from "./RouteLayer";
+
+setWorkerUrl(workerUrl);
 
 // Bản đồ Vector Carto Positron siêu nhẹ, tải nhanh, hiển thị đầy đủ chi tiết đường sá và đảm bảo vẽ đè các lớp tuyến đường rõ ràng
 const MAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
