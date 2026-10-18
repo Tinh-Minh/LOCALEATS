@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/LOCALEATS/',
   plugins: [react()],
   optimizeDeps: {
     exclude: ['maplibre-gl'],

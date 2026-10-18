@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import MapPage from "./pages/MapPage";
@@ -12,7 +12,7 @@ import TripPlannerPage from "./pages/TripPlannerPage";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="flex flex-col h-screen overflow-hidden bg-[#FDFBF7]">
         {/* Top navbar */}
         <Navbar />
@@ -37,6 +37,6 @@ export default function App() {
           </main>
         </div>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
