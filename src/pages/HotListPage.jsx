@@ -41,18 +41,18 @@ export default function HotListPage() {
         </span>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
         {/* Tiêu đề & Bộ lọc thời gian */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 animate-fadeIn">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-8 animate-fadeIn">
           <div>
-            <div className="inline-flex items-center gap-1.5 bg-red-100 text-[#E84A27] text-[11px] font-extrabold px-3 py-1 rounded-full mb-2">
-              <span className="material-symbols-outlined text-[15px]">local_fire_department</span>
+            <div className="inline-flex items-center gap-1.5 bg-red-100 text-[#E84A27] text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full mb-2">
+              <span className="material-symbols-outlined text-[14px] sm:text-[15px]">local_fire_department</span>
               BẢNG XẾP HẠNG ẨM THỰC THỊNH HÀNH
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
               Quán Ăn & Món Ngon <span className="gradient-text-premium">Đang Gây Bão</span>
             </h1>
-            <p className="text-[13px] text-gray-600 mt-1 max-w-2xl leading-relaxed">
+            <p className="text-[12px] sm:text-[13px] text-gray-600 mt-1 max-w-2xl leading-relaxed">
               Xếp hạng khách quan dựa trên mật độ chỉ đường GPS thực tế, đánh giá cộng đồng và tần suất nhắc đến trên mạng xã hội tại TP.HCM.
             </p>
           </div>

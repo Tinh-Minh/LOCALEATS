@@ -78,9 +78,14 @@ export default function PlacePopup({ place, userLocation, onClose, onStartRoute,
   };
 
   return (
-    <div className="bg-white border border-gray-200/90 rounded-2xl shadow-2xl overflow-hidden w-full animate-fadeIn">
+    <div className="bg-white border border-gray-200/90 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden w-full max-h-[82vh] sm:max-h-[85vh] flex flex-col animate-fadeIn">
+      {/* Mobile drag handle bar */}
+      <div className="sm:hidden flex justify-center pt-2 pb-1 bg-white cursor-pointer" onClick={onClose}>
+        <div className="w-10 h-1 bg-gray-300 rounded-full" />
+      </div>
+
       {/* Hero image */}
-      <div className="relative h-44 overflow-hidden">
+      <div className="relative h-36 sm:h-44 shrink-0 overflow-hidden">
         <img src={place.image} alt={place.name} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
         {/* Badges */}
         <div className="absolute top-3 left-3 flex gap-2">
@@ -105,7 +110,7 @@ export default function PlacePopup({ place, userLocation, onClose, onStartRoute,
       </div>
 
       {/* Info */}
-      <div className="p-3 flex flex-col gap-2">
+      <div className="p-3 flex flex-col gap-2 overflow-y-auto styled-scrollbar flex-1">
         {/* Rating & status */}
         <div className="flex items-center justify-between animate-slideInUp" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center gap-1.5">

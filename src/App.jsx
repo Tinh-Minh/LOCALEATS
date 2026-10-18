@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
+import BottomNav from "./components/BottomNav";
 import MapPage from "./pages/MapPage";
 import HotListPage from "./pages/HotListPage";
 import AIPage from "./pages/AIPage";
@@ -20,7 +21,7 @@ export default function App() {
         {/* Body: sidebar + content */}
         <div className="flex flex-1 overflow-hidden pt-16">
           <Sidebar />
-          <main className="flex-1 flex overflow-hidden">
+          <main className="flex-1 flex overflow-hidden pb-14 md:pb-0 relative">
             <Routes>
               <Route path="/" element={<MapPage />} />
               <Route path="/hotlist" element={<HotListPage />} />
@@ -36,6 +37,9 @@ export default function App() {
             </Routes>
           </main>
         </div>
+
+        {/* Mobile bottom navigation bar */}
+        <BottomNav />
       </div>
     </HashRouter>
   );

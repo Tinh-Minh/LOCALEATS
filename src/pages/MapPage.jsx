@@ -200,11 +200,11 @@ export default function MapPage() {
         />
       </div>
 
-      {/* Left panel: Place popup OR Directions panel */}
-      <div className="absolute left-3 top-16 z-30 w-[340px] flex flex-col gap-2">
+      {/* Left panel / Bottom sheet: Place popup OR Directions panel */}
+      <div className="fixed sm:absolute inset-x-0 bottom-14 sm:bottom-auto sm:top-16 sm:left-3 z-30 sm:w-[360px] flex flex-col gap-2 max-w-lg sm:max-w-none mx-auto sm:mx-0 pointer-events-auto">
         {/* Show PlacePopup when no route is active */}
         {place && !routeData && !isRouting && !routeError && (
-          <div className="animate-slideInLeft">
+          <div className="animate-slideInUp sm:animate-slideInLeft px-2 sm:px-0">
             <PlacePopup
               place={place}
               userLocation={userLocation}
@@ -217,7 +217,7 @@ export default function MapPage() {
 
         {/* Show DirectionsPanel when routing */}
         {(routeData || isRouting || routeError) && (
-          <div key={`route-${selectedId}`} className="animate-slideInLeft">
+          <div key={`route-${selectedId}`} className="animate-slideInUp sm:animate-slideInLeft px-2 sm:px-0">
             <DirectionsPanel
               routeData={routeData}
               isRouting={isRouting}
@@ -239,7 +239,7 @@ export default function MapPage() {
       </div>
 
       {/* Map Controls & Legend Container (Bottom Right Stack) */}
-      <div className="absolute right-4 bottom-6 z-20 flex flex-col items-end gap-2.5">
+      <div className="absolute right-3 sm:right-4 bottom-16 sm:bottom-6 z-20 flex flex-col items-end gap-2 sm:gap-2.5">
         {/* 1. Legend Card Popup */}
         {showLegend && (
           <div className="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-2xl shadow-2xl p-3.5 text-[11px] w-64 animate-slideInUp mb-1">
@@ -386,7 +386,7 @@ export default function MapPage() {
 
       {/* Live route badge (Bottom Left) — only show when routing */}
       {routeData && (
-        <div className="absolute bottom-4 left-3 z-20 flex flex-col gap-1.5 animate-slideInUp">
+        <div className="absolute bottom-16 sm:bottom-4 left-3 z-20 flex flex-col gap-1.5 animate-slideInUp">
           {/* Multi-stop Tour progress badge if itinerary active */}
           {itineraryStops && itineraryStops.length > 1 && (
             <div className="bg-gray-900/95 backdrop-blur-md text-white border border-cyan-500/50 rounded-2xl p-3 shadow-2xl max-w-sm flex items-center justify-between gap-3 animate-slideInUp">

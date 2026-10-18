@@ -136,4 +136,16 @@ button, a, input, [role="button"] {
   .delay-500 { animation-delay: 500ms; }
   .delay-600 { animation-delay: 600ms; }
   .delay-700 { animation-delay: 700ms; }
+
+  /* Mobile viewport & notch padding */
+  .safe-area-pb {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Touch optimization for mobile buttons */
+@media (max-width: 768px) {
+  button, a {
+    touch-action: manipulation;
+  }
 }

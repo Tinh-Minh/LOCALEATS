@@ -74,7 +74,7 @@ export default function Sidebar() {
   const { pathname } = useLocation();
 
   return (
-    <aside className="w-80 shrink-0 h-full bg-white border-r border-[#F2EAE1] shadow-[0_12px_36px_rgba(74,59,50,0.06)] flex flex-col overflow-hidden">
+    <aside className="hidden md:flex w-72 lg:w-80 shrink-0 h-full bg-white border-r border-[#F2EAE1] shadow-[0_12px_36px_rgba(74,59,50,0.06)] flex-col overflow-hidden">
       {/* Section header */}
       <div className="px-4 py-3 bg-[#FAF4EE] flex items-center justify-between border-b border-[#F2EAE1]">
         <span className="text-[14px] font-bold text-[#231812] tracking-tight">Khám phá & Điều hướng</span>

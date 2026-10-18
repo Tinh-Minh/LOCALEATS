@@ -149,7 +149,12 @@ export default function DirectionsPanel({
   const destName = customDestName || placeName;
 
   return (
-    <div className="bg-white/95 backdrop-blur-xl border border-gray-200/90 rounded-2xl shadow-2xl overflow-hidden animate-slideInLeft w-full">
+    <div className="bg-white/95 backdrop-blur-xl border border-gray-200/90 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slideInLeft w-full max-h-[82vh] sm:max-h-[85vh] flex flex-col">
+      {/* Mobile drag handle */}
+      <div className="sm:hidden flex justify-center pt-2 pb-1 bg-white cursor-pointer" onClick={onClose}>
+        <div className="w-10 h-1 bg-gray-300 rounded-full" />
+      </div>
+
       {/* Header */}
       <div className="bg-gradient-to-r from-[#E84A27] to-[#FF6B35] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
