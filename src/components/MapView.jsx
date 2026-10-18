@@ -5,31 +5,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import FoodPin from "./FoodPin";
 import RouteLayer from "./RouteLayer";
 
-// Style OpenStreetMap chuẩn dạng raster tile trực tiếp, tương thích 100% với mọi trình duyệt và static host GitHub Pages
-const MAP_STYLE = {
-  version: 8,
-  sources: {
-    "osm-tiles": {
-      type: "raster",
-      tiles: [
-        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-      attribution: "&copy; OpenStreetMap Contributors",
-    },
-  },
-  layers: [
-    {
-      id: "osm-tiles-layer",
-      type: "raster",
-      source: "osm-tiles",
-      minzoom: 0,
-      maxzoom: 19,
-    },
-  ],
-};
+// Bản đồ Vector Carto Positron siêu nhẹ, tải nhanh, hiển thị đầy đủ chi tiết đường sá và đảm bảo vẽ đè các lớp tuyến đường rõ ràng
+const MAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
 const MapView = forwardRef(function MapView(
   { places, selectedId, onSelect, onMapClick, routeData, transportMode, userLocation, itineraryStops = [] },
