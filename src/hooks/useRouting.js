@@ -269,13 +269,19 @@ export default function useRouting() {
     }
   }, [getUserLocation, transportMode, locationStatus]);
 
-  // Clear route
+  // Clear route & khôi phục lại GPS thật của người dùng nếu trước đó chọn điểm bắt đầu thủ công
   const clearRoute = useCallback(() => {
     console.log("[Routing] Clearing route");
     setRouteData(null);
     setRouteError(null);
     setLocationStatus(LOC_STATUS.PENDING);
-  }, []);
+    if (gpsCache.current?.loc) {
+      setUserLocation(gpsCache.current.loc);
+      setLocationStatus(LOC_STATUS.GPS_OK);
+    } else {
+      getUserLocation();
+    }
+  }, [getUserLocation]);
 
   // Switch transport mode & re-route
   const switchMode = useCallback(async (mode) => {

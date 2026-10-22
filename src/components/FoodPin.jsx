@@ -1,3 +1,5 @@
+import fireImage from "/fire-icon.png";
+
 export default function FoodPin({ place, active, onClick, itineraryOrder }) {
   const rating = Number(place.rating) || 4.0;
 
@@ -48,51 +50,23 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
         </span>
       )}
 
-      {/* Cấu trúc ngọn lửa đang cháy bao bọc lấy icon quán (Màu dịu êm, không chói lóa mắt) */}
+      {/* Cấu trúc ngọn lửa bùng cháy chuẩn theo ảnh mẫu bao bọc lấy icon quán */}
       <div className="relative flex items-center justify-center">
         {hasFireFlame && (
-          <div className="absolute -inset-2.5 sm:-inset-3.5 flex items-center justify-center pointer-events-none animate-flame-soft">
-            <svg
-              viewBox="0 0 100 120"
-              className="w-full h-full filter drop-shadow-[0_2px_6px_rgba(255,107,53,0.35)]"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                {/* Lớp lửa ngoài dịu mắt */}
-                <linearGradient id="softFireOuter" x1="50" y1="120" x2="50" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#E84A27" stopOpacity="0.85" />
-                  <stop offset="50%" stopColor="#FF8C42" stopOpacity="0.75" />
-                  <stop offset="100%" stopColor="#FFD166" stopOpacity="0.8" />
-                </linearGradient>
-                {/* Lớp lửa lõi trong ấm áp */}
-                <linearGradient id="softFireInner" x1="50" y1="110" x2="50" y2="25" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#FF8C42" stopOpacity="0.9" />
-                  <stop offset="60%" stopColor="#FFD166" stopOpacity="0.85" />
-                  <stop offset="100%" stopColor="#FFF2B2" stopOpacity="0.95" />
-                </linearGradient>
-              </defs>
-              {/* Vỏ ngọn lửa mềm mại bên ngoài */}
-              <path
-                d="M50 0C50 0 68 28 68 55C68 76 56 95 50 100C44 95 32 76 32 55C32 28 50 0 50 0Z"
-                fill="url(#softFireOuter)"
-                transform="scale(1.35) translate(-13, -12)"
-              />
-              {/* Lõi ngọn lửa sáng ấm áp bên trong */}
-              <path
-                d="M50 20C50 20 62 42 62 62C62 78 54 90 50 94C46 90 38 78 38 62C38 42 50 20 50 20Z"
-                fill="url(#softFireInner)"
-                transform="scale(1.2) translate(-8, -6)"
-              />
-            </svg>
+          <div className="absolute -inset-3.5 sm:-inset-5 flex items-center justify-center pointer-events-none animate-flame-soft">
+            <img
+              src={fireImage}
+              alt="fire"
+              className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(232,74,39,0.3)] opacity-90 select-none"
+            />
           </div>
         )}
 
-        {/* Icon quán nằm gọn gàng bên trong ngọn lửa */}
+        {/* Icon quán nằm lọt lòng gọn gàng bên trong ngọn lửa */}
         <span
-          className={`relative ${sizeClasses} rounded-full bg-white flex flex-col items-center justify-center transition-all duration-300 shadow-md ${
+          className={`relative z-10 ${sizeClasses} rounded-full bg-white flex flex-col items-center justify-center transition-all duration-300 shadow-md ${
             active
-              ? "border-2 border-[#E84A27] ring-2 ring-orange-300/50 shadow-lg"
+              ? "border-2 border-[#E84A27] ring-2 ring-orange-300/60 shadow-lg"
               : isInItinerary
               ? itineraryOrder === 1
                 ? "border-2 border-[#E84A27] shadow-orange-500/25"

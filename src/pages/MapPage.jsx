@@ -43,12 +43,15 @@ export default function MapPage() {
       setSelectedId(firstStop.id);
       // Tự động kích hoạt chỉ đường tới chặng đầu tiên
       startRoute({ lat: firstStop.lat, lng: firstStop.lng }, location.state.vehicle || "car");
+      // Xóa state để khi reload lại trang không bị mở lại
+      navigate(location.pathname, { replace: true, state: {} });
     } else if (location.state?.selectedPlaceId) {
       setSelectedId(location.state.selectedPlaceId);
       const p = places.find((x) => x.id === location.state.selectedPlaceId);
       if (p && mapRef.current) {
         mapRef.current.flyToLocation(p.lng, p.lat, 16.5);
       }
+      navigate(location.pathname, { replace: true, state: {} });
     }
 
     if (location.state?.searchQuery) {
@@ -60,8 +63,9 @@ export default function MapPage() {
         setSelectedId(firstPlace.id);
         startRoute({ lat: firstPlace.lat, lng: firstPlace.lng }, "bike");
       }
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state]);
+  }, [location.state, location.pathname, navigate, startRoute]);
 
   // Lọc quán ăn theo chip danh mục + bộ lọc giờ mở cửa + từ khóa tìm kiếm
   const filteredPlaces = places.filter((p) => {
@@ -207,10 +211,10 @@ export default function MapPage() {
       </div>
 
       {/* Left panel / Bottom sheet: Place popup OR Directions panel */}
-      <div className="fixed sm:absolute inset-x-0 bottom-14 sm:bottom-auto sm:top-16 sm:left-3 z-30 sm:w-[360px] flex flex-col gap-2 max-w-lg sm:max-w-none mx-auto sm:mx-0 pointer-events-auto">
+      <div className="fixed sm:absolute inset-x-0 bottom-14 sm:bottom-auto sm:top-16 sm:left-3 z-30 sm:w-[360px] flex flex-col gap-2 w-full max-w-full sm:max-w-none pointer-events-auto box-border overflow-hidden">
         {/* Show PlacePopup when no route is active */}
         {place && !routeData && !isRouting && !routeError && (
-          <div className="animate-slideInUp sm:animate-slideInLeft px-2 sm:px-0">
+          <div className="animate-slideInUp sm:animate-slideInLeft px-2 sm:px-0 w-full max-w-full box-border">
             <PlacePopup
               place={place}
               userLocation={userLocation}
@@ -223,7 +227,7 @@ export default function MapPage() {
 
         {/* Show DirectionsPanel when routing */}
         {(routeData || isRouting || routeError) && (
-          <div key={`route-${selectedId}`} className="animate-slideInUp sm:animate-slideInLeft px-2 sm:px-0">
+          <div key={`route-${selectedId}`} className="animate-slideInUp sm:animate-slideInLeft px-2 sm:px-0 w-full max-w-full box-border">
             <DirectionsPanel
               routeData={routeData}
               isRouting={isRouting}
