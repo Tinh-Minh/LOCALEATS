@@ -127,6 +127,53 @@ button, a, input, [role="button"] {
   }
 }
 
+/* ---------- Fire Aura Glow Animations (Hào quang ngọn lửa rực cháy) ---------- */
+@keyframes flameFlicker {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    opacity: 0.85;
+    filter: drop-shadow(0 0 6px #ff4500) drop-shadow(0 0 14px #ff8c00);
+  }
+  25% {
+    transform: scale(1.12) translateY(-2px) rotate(-2deg);
+    opacity: 0.95;
+    filter: drop-shadow(0 0 10px #ff2200) drop-shadow(0 0 18px #ffa500);
+  }
+  50% {
+    transform: scale(1.05) translateY(-1px) rotate(2deg);
+    opacity: 0.8;
+    filter: drop-shadow(0 0 8px #ff5500) drop-shadow(0 0 16px #ffb700);
+  }
+  75% {
+    transform: scale(1.16) translateY(-3px) rotate(-1deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 12px #ff1100) drop-shadow(0 0 22px #ff7700);
+  }
+}
+
+@keyframes flameRing {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.animate-flame {
+  animation: flameFlicker 1.6s ease-in-out infinite;
+}
+
+.animate-flame-ring {
+  animation: flameRing 2s cubic-bezier(0.2, 0.8, 0.4, 1) infinite;
+}
+
 @layer utilities {
   /* Stagger delay utilities for Tailwind */
   .delay-100 { animation-delay: 100ms; }

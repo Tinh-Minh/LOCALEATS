@@ -46,6 +46,17 @@ const MapView = forwardRef(function MapView(
         mapRef.current.resetNorth({ duration: 500 });
       }
     },
+    resetToInitialView: () => {
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [106.7005, 10.7745],
+          zoom: 15.5,
+          pitch: 55,
+          bearing: 20,
+          duration: 1200,
+        });
+      }
+    },
   }));
 
   // Bấm pin thì bản đồ bay tới quán đó

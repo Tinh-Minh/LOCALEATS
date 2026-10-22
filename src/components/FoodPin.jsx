@@ -48,17 +48,28 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
         </span>
       )}
 
-      {/* Hào quang phát sáng thu gọn tinh tế */}
+      {/* Hào quang ngọn lửa rực hực cháy (Fire Aura Glow) */}
       {isInItinerary ? (
         <span
-          className={`absolute -inset-1 sm:-inset-2 rounded-full opacity-60 blur-xs sm:blur-sm animate-pulse ${
+          className={`absolute -inset-1.5 sm:-inset-2 rounded-full opacity-70 blur-[2px] animate-pulse ${
             itineraryOrder === 1
-              ? "bg-gradient-to-r from-orange-500 to-[#E84A27]"
-              : "bg-gradient-to-r from-cyan-400 to-blue-500"
+              ? "bg-gradient-to-t from-red-600 via-orange-500 to-amber-300"
+              : "bg-gradient-to-t from-cyan-600 via-sky-400 to-teal-200"
           }`}
         />
-      ) : isTopRated ? (
-        <span className="absolute -inset-1 sm:-inset-2.5 rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-[#E84A27] opacity-40 blur-xs sm:blur-sm animate-pulse" />
+      ) : isTopRated || place.hot ? (
+        <>
+          {/* Vòng xung lực lửa tỏa ra ngoài */}
+          <span className="absolute -inset-2 rounded-full border border-orange-500/70 animate-flame-ring pointer-events-none" />
+          {/* Lớp nền hào quang lửa bập bùng hực hực */}
+          <span className="absolute -inset-2 sm:-inset-3 rounded-full bg-gradient-to-t from-red-600 via-[#E84A27] to-amber-300 opacity-80 blur-[3px] animate-flame pointer-events-none" />
+          {/* Tia lửa nhỏ li ti phía trên đỉnh pin */}
+          <span className="absolute -top-3 text-[11px] sm:text-[13px] animate-bounce pointer-events-none leading-none select-none">
+            🔥
+          </span>
+        </>
+      ) : isHighRated ? (
+        <span className="absolute -inset-1.5 sm:-inset-2 rounded-full bg-gradient-to-t from-orange-500 via-amber-400 to-yellow-300 opacity-60 blur-[2px] animate-flame pointer-events-none" />
       ) : null}
 
       {/* Thân tròn của Pin */}

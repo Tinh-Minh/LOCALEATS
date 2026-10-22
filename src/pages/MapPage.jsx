@@ -109,11 +109,14 @@ export default function MapPage() {
     }
   };
 
-  // Handle close directions
+  // Handle close directions (khi nhấn dấu X hủy tìm đường: xóa route và tự động zoom mượt về góc nhìn chuẩn ban đầu)
   const handleCloseDirections = () => {
     clearRoute();
     setItineraryStops([]);
     setSelectedId(null);
+    if (mapRef.current) {
+      mapRef.current.resetToInitialView();
+    }
   };
 
   // Hủy bỏ lộ trình nhiều điểm dừng -> Xóa đường mờ và quay về trang Kế hoạch chuyến đi (/trip)
@@ -121,6 +124,9 @@ export default function MapPage() {
     clearRoute();
     setItineraryStops([]);
     setSelectedId(null);
+    if (mapRef.current) {
+      mapRef.current.resetToInitialView();
+    }
     navigate("/trip");
   };
 
