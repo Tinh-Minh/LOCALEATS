@@ -399,33 +399,33 @@ export default function DirectionsPanel({
           )}
 
           {/* Summary card */}
-          <div className="mx-3 mb-2 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-3 border border-orange-100/80">
+          <div className="mx-3 mb-2 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-2.5 sm:p-3 border border-orange-100/80">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
                 <div className="flex flex-col items-center">
-                  <span className="text-xl font-extrabold text-[#E84A27]">
+                  <span className="text-lg sm:text-xl font-extrabold text-[#E84A27]">
                     {routeData.summary.totalDuration}
                   </span>
-                  <span className="text-[10px] text-gray-500 font-medium">thời gian</span>
+                  <span className="text-[9px] sm:text-[10px] text-gray-500 font-medium">thời gian</span>
                 </div>
-                <div className="w-px h-8 bg-orange-200" />
+                <div className="w-px h-7 sm:h-8 bg-orange-200" />
                 <div className="flex flex-col items-center">
-                  <span className="text-xl font-extrabold text-gray-800">
+                  <span className="text-lg sm:text-xl font-extrabold text-gray-800">
                     {routeData.summary.totalDistance}
                   </span>
-                  <span className="text-[10px] text-gray-500 font-medium">khoảng cách</span>
+                  <span className="text-[9px] sm:text-[10px] text-gray-500 font-medium">khoảng cách</span>
                 </div>
               </div>
               <div className="flex flex-col items-end">
-                <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  Tuyến nhanh nhất
+                <span className="bg-green-100 text-green-700 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  Nhanh nhất
                 </span>
               </div>
             </div>
           </div>
 
           {/* Steps list */}
-          <div className="max-h-[220px] overflow-y-auto styled-scrollbar px-3 pb-3">
+          <div className="max-h-[160px] sm:max-h-[220px] overflow-y-auto styled-scrollbar px-3 pb-3">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
               Hướng dẫn chi tiết ({routeData.steps.length} bước)
             </p>

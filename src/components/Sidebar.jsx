@@ -41,6 +41,14 @@ const sidebarNavItems = [
     badge: "MỚI",
   },
   {
+    id: "mystery",
+    label: "Hôm Nay Ăn Gì? (Quay Số)",
+    path: "/mystery",
+    icon: "casino",
+    type: "smart",
+    badge: "MỚI",
+  },
+  {
     id: "trip",
     label: "Kế hoạch chuyến đi (Food Tour)",
     path: "/trip",

@@ -127,15 +127,15 @@ export default function MapPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative page-enter">
       {/* Filter chips row */}
-      <div className="absolute top-3 left-3 right-3 z-20 flex gap-2 overflow-x-auto no-scrollbar stagger-children">
+      <div className="absolute top-2.5 sm:top-3 left-2 sm:left-3 right-2 sm:right-3 z-20 flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
         {filterChips.map((chip) => (
           <button
             key={chip.id}
             onClick={() => setActiveFilter(chip.id)}
-            className={`flex items-center gap-1.5 h-9 px-4 rounded-full text-[12px] font-bold whitespace-nowrap transition-all shadow-md btn-press ${
+            className={`flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-3 sm:px-4 rounded-full text-[11px] sm:text-[12px] font-bold whitespace-nowrap transition-all shadow-sm sm:shadow-md ${
               activeFilter === chip.id
-                ? "bg-[#E84A27] text-white shadow-md shadow-[#E84A27]/30 glow-primary"
-                : "bg-white text-gray-700 hover:bg-orange-50 border border-gray-200/80 hover:border-[#E84A27]/40 hover:shadow-lg"
+                ? "bg-[#E84A27] text-white shadow-[#E84A27]/30"
+                : "bg-white/95 backdrop-blur-sm text-gray-700 hover:bg-orange-50 border border-gray-200/80"
             }`}
           >
             {chip.label}
@@ -144,18 +144,18 @@ export default function MapPage() {
         {/* Clock filter */}
         <button
           onClick={() => setOpenNowOnly(!openNowOnly)}
-          title={openNowOnly ? "Đang lọc: Chỉ quán mở cửa (bấm để xem tất cả)" : "Lọc quán đang mở cửa ngay bây giờ"}
-          className={`h-9 px-3 rounded-full border flex items-center gap-1.5 shadow-md transition-all ml-auto shrink-0 ${
+          title={openNowOnly ? "Đang lọc: Chỉ quán mở cửa" : "Lọc quán đang mở cửa"}
+          className={`h-8 sm:h-9 px-2.5 sm:px-3 rounded-full border flex items-center gap-1 sm:gap-1.5 shadow-sm transition-all shrink-0 ${
             openNowOnly
               ? "bg-emerald-600 text-white border-emerald-500 shadow-emerald-500/30"
-              : "bg-white border-gray-200/80 text-gray-600 hover:bg-orange-50 hover:text-[#E84A27]"
+              : "bg-white/95 backdrop-blur-sm border-gray-200/80 text-gray-600"
           }`}
         >
-          <span className="material-symbols-outlined text-[17px]">
+          <span className="material-symbols-outlined text-[15px] sm:text-[17px]">
             {openNowOnly ? "lock_open" : "schedule"}
           </span>
-          <span className="text-[11px] font-bold hidden sm:inline">
-            {openNowOnly ? "Đang mở cửa" : "Giờ mở"}
+          <span className="text-[10px] sm:text-[11px] font-bold hidden xs:inline">
+            {openNowOnly ? "Đang mở" : "Giờ mở"}
           </span>
         </button>
       </div>

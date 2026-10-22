@@ -117,21 +117,31 @@ const MapView = forwardRef(function MapView(
           </Marker>
         )}
 
-        {/* Food pins */}
-        {places.map((p) => {
-          const itinIndex = itineraryStops?.findIndex((s) => s.id === p.id);
-          const itineraryOrder = itinIndex >= 0 ? itinIndex + 1 : null;
-          return (
-            <Marker key={p.id} longitude={p.lng} latitude={p.lat} anchor="bottom">
-              <FoodPin
-                place={p}
-                active={p.id === selectedId}
-                itineraryOrder={itineraryOrder}
-                onClick={() => onSelect(p.id)}
-              />
-            </Marker>
-          );
-        })}
+        {/* Food pins: Khi xem lộ trình, chỉ hiển thị các quán liên quan (quán đích hoặc các trạm trong tour) để tránh rối mắt */}
+        {places
+          .filter((p) => {
+            if (itineraryStops && itineraryStops.length > 0) {
+              return itineraryStops.some((s) => s.id === p.id);
+            }
+            if (routeData) {
+              return p.id === selectedId;
+            }
+            return true;
+          })
+          .map((p) => {
+            const itinIndex = itineraryStops?.findIndex((s) => s.id === p.id);
+            const itineraryOrder = itinIndex >= 0 ? itinIndex + 1 : null;
+            return (
+              <Marker key={p.id} longitude={p.lng} latitude={p.lat} anchor="bottom">
+                <FoodPin
+                  place={p}
+                  active={p.id === selectedId}
+                  itineraryOrder={itineraryOrder}
+                  onClick={() => onSelect(p.id)}
+                />
+              </Marker>
+            );
+          })}
       </Map>
     </div>
   );

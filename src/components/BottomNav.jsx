@@ -15,6 +15,13 @@ const bottomNavItems = [
     badge: "HOT",
   },
   {
+    id: "mystery",
+    label: "Ăn gì?",
+    path: "/mystery",
+    icon: "casino",
+    badge: "MỚI",
+  },
+  {
     id: "trip",
     label: "Lập Tour",
     path: "/trip",
@@ -25,12 +32,6 @@ const bottomNavItems = [
     label: "AI Gợi ý",
     path: "/ai",
     icon: "auto_awesome",
-  },
-  {
-    id: "saved",
-    label: "Đã lưu",
-    path: "/saved",
-    icon: "bookmark",
   },
 ];
 

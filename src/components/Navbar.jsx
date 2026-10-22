@@ -266,6 +266,7 @@ export default function Navbar({ onMenuToggle }) {
           <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5 styled-scrollbar">
             {[
               { id: "map", label: "Quanh đây & Bản đồ", path: "/", icon: "explore" },
+              { id: "mystery", label: "Hôm Nay Ăn Gì? (Quay số)", path: "/mystery", icon: "casino", badge: "MỚI" },
               { id: "hot", label: "Đang HOT Bùng Nổ", path: "/hotlist", icon: "local_fire_department", badge: "HOT" },
               { id: "vip", label: "Ưu đãi Đối tác VIP", path: "/vip", icon: "workspace_premium", badge: "VIP" },
               { id: "trip", label: "Kế hoạch Food Tour", path: "/trip", icon: "alt_route", badge: "MỚI" },

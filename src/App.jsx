@@ -10,6 +10,7 @@ import SavedPage from "./pages/SavedPage";
 import ReviewPage from "./pages/ReviewPage";
 import LivePulsePage from "./pages/LivePulsePage";
 import TripPlannerPage from "./pages/TripPlannerPage";
+import MysteryFoodPage from "./pages/MysteryFoodPage";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="/live" element={<LivePulsePage />} />
               <Route path="/trip" element={<TripPlannerPage />} />
               <Route path="/trip-planner" element={<TripPlannerPage />} />
+              <Route path="/mystery" element={<MysteryFoodPage />} />
               {/* Fallback for sidebar items not yet implemented */}
               <Route path="*" element={<HotListPage />} />
             </Routes>

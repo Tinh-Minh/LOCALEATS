@@ -141,37 +141,34 @@ export default function PlacePopup({ place, userLocation, onClose, onStartRoute,
         </div>
 
         {/* Route options — now interactive */}
-        <div className="bg-gray-50/80 rounded-xl p-3 animate-slideInUp" style={{ animationDelay: '0.25s' }}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Lộ trình nhanh nhất</span>
-            <span className="text-[11px] text-[#E84A27] font-semibold">Tránh kẹt xe</span>
+        <div className="bg-gray-50/80 rounded-xl p-2.5 sm:p-3 animate-slideInUp" style={{ animationDelay: '0.25s' }}>
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 uppercase tracking-wide">Lộ trình nhanh nhất</span>
+            <span className="text-[10px] sm:text-[11px] text-[#E84A27] font-semibold">Tránh kẹt xe</span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {modes.map((m) => (
               <div
                 key={m.id}
                 onClick={() => setSelectedMode(m.id)}
-                className={`flex flex-col items-center py-2 px-1 rounded-xl cursor-pointer transition-all hover-lift ${
-                  selectedMode === m.id ? "bg-[#E84A27] text-white shadow-md shadow-[#E84A27]/30 glow-primary" : "bg-white border border-gray-200 hover:border-[#E84A27] hover:shadow-md"
+                className={`flex flex-col items-center py-1.5 sm:py-2 px-1 rounded-xl cursor-pointer transition-all ${
+                  selectedMode === m.id ? "bg-[#E84A27] text-white shadow-md shadow-[#E84A27]/30" : "bg-white border border-gray-200"
                 }`}
               >
-                <span className="text-[16px]">{m.icon}</span>
-                <span className={`text-[12px] font-bold mt-0.5 ${selectedMode === m.id ? "text-white" : "text-gray-800"}`}>{m.time}</span>
-                <span className={`text-[10px] ${selectedMode === m.id ? "text-white/80" : "text-gray-500"}`}>{m.dist}</span>
+                <span className="text-[14px] sm:text-[16px]">{m.icon}</span>
+                <span className={`text-[11px] sm:text-[12px] font-bold mt-0.5 ${selectedMode === m.id ? "text-white" : "text-gray-800"}`}>{m.time}</span>
+                <span className={`text-[9px] sm:text-[10px] ${selectedMode === m.id ? "text-white/80" : "text-gray-500"}`}>{m.dist}</span>
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-gray-500 mt-2">
-            ↪ Rẽ phải vào {place.address?.split(",")[1] || "đường chính"} • Đi thẳng 900m qua Pasteur
-          </p>
         </div>
 
         {/* CTA buttons */}
-        <div className="flex gap-2 animate-slideInUp" style={{ animationDelay: '0.3s' }}>
+        <div className="flex gap-2 animate-slideInUp mt-0.5" style={{ animationDelay: '0.3s' }}>
           <button
             onClick={handleStartRoute}
             disabled={isRouting}
-            className={`flex-1 h-11 rounded-full text-white text-[12px] font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-[#E84A27]/30 transition-all hover:scale-[1.02] active:scale-95 btn-press glow-primary-hover whitespace-nowrap leading-none px-3 ${
+            className={`flex-1 h-10 sm:h-11 rounded-full text-white text-[12px] font-bold flex items-center justify-center gap-1.5 shadow-md sm:shadow-lg shadow-[#E84A27]/30 transition-all active:scale-95 whitespace-nowrap leading-none px-3 ${
               isRouting
                 ? "bg-gray-400 cursor-wait shadow-none"
                 : "bg-[#E84A27] hover:bg-[#c93d1f]"
@@ -189,13 +186,13 @@ export default function PlacePopup({ place, userLocation, onClose, onStartRoute,
               </>
             )}
           </button>
-          <button className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-orange-50 hover:border-[#E84A27] hover:scale-110 transition-all">
+          <button className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-orange-50 transition-all shrink-0">
             <span className="material-symbols-outlined text-[18px] text-gray-600">bookmark</span>
           </button>
-          <button className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-green-50 hover:border-green-500 hover:scale-110 transition-all">
+          <button className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-green-50 transition-all shrink-0">
             <span className="material-symbols-outlined text-[18px] text-gray-600">call</span>
           </button>
-          <button className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-blue-50 hover:border-blue-500 hover:scale-110 transition-all">
+          <button className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-blue-50 transition-all shrink-0">
             <span className="material-symbols-outlined text-[18px] text-gray-600">share</span>
           </button>
         </div>
