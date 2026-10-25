@@ -76,6 +76,24 @@ const sidebarNavItems = [
     badgeStyle: "hot",
     type: "hot",
   },
+  {
+    id: "merchant",
+    label: "Kênh Chủ Quán (Merchant)",
+    path: "/merchant",
+    icon: "storefront",
+    iconColor: "text-emerald-600",
+    badge: "QUÁN",
+    type: "smart",
+  },
+  {
+    id: "admin",
+    label: "Quản Trị Trung Tâm (Admin)",
+    path: "/admin",
+    icon: "admin_panel_settings",
+    iconColor: "text-purple-600",
+    badge: "ADMIN",
+    type: "vip",
+  },
 ];
 
 export default function Sidebar() {

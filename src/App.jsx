@@ -11,6 +11,8 @@ import ReviewPage from "./pages/ReviewPage";
 import LivePulsePage from "./pages/LivePulsePage";
 import TripPlannerPage from "./pages/TripPlannerPage";
 import MysteryFoodPage from "./pages/MysteryFoodPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import MerchantDashboardPage from "./pages/MerchantDashboardPage";
 
 export default function App() {
   return (
@@ -34,6 +36,8 @@ export default function App() {
               <Route path="/trip" element={<TripPlannerPage />} />
               <Route path="/trip-planner" element={<TripPlannerPage />} />
               <Route path="/mystery" element={<MysteryFoodPage />} />
+              <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/merchant" element={<MerchantDashboardPage />} />
               {/* Fallback for sidebar items not yet implemented */}
               <Route path="*" element={<HotListPage />} />
             </Routes>
