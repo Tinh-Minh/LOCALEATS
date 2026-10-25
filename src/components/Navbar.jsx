@@ -274,8 +274,7 @@ export default function Navbar({ onMenuToggle }) {
               { id: "review", label: "Góc Review Foodie", path: "/review", icon: "rate_review" },
               { id: "saved", label: "Bộ sưu tập đã lưu", path: "/saved", icon: "bookmark" },
               { id: "live", label: "Livestream Quán Live", path: "/live", icon: "videocam", badge: "LIVE" },
-              { id: "merchant", label: "Kênh Chủ Quán (Merchant)", path: "/merchant", icon: "storefront", badge: "QUÁN" },
-              { id: "admin", label: "Quản Trị Trung Tâm (Admin)", path: "/admin", icon: "admin_panel_settings", badge: "ADMIN" },
+              { id: "portal", label: "Cổng Quản Trị & Đối Tác", path: "/portal", icon: "key", badge: "PORTAL" },
             ].map((item) => {
               const active = pathname === item.path || (item.path === "/trip" && pathname === "/trip-planner");
               return (

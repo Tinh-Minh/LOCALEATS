@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { places } from "../data/places";
 
 export default function MerchantDashboardPage() {
+  const navigate = useNavigate();
   // Chọn quán mặc định cho chủ quán quản lý (ví dụ: Bánh Mì Huỳnh Hoa hoặc Phở Thìn Lò Đúc)
   const [selectedPlaceId, setSelectedPlaceId] = useState(2); // Bánh Mì Huỳnh Hoa
   const [activeTab, setActiveTab] = useState("overview"); // overview, menu, orders, promo, reviews
@@ -149,6 +151,27 @@ export default function MerchantDashboardPage() {
               <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
               {isOpen ? "ĐANG MỞ CỬA" : "TẠM NGHỈ"}
             </button>
+
+            {/* Đăng xuất & Về trang chủ */}
+            <button
+              onClick={() => {
+                sessionStorage.removeItem("localeats_merchant_auth");
+                navigate("/portal");
+              }}
+              className="bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold flex items-center gap-1 transition-all"
+              title="Đăng xuất kênh đối tác"
+            >
+              <span className="material-symbols-outlined text-base">logout</span>
+              <span className="hidden sm:inline">Đăng xuất</span>
+            </button>
+            <Link
+              to="/"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold flex items-center gap-1 transition-all"
+              title="Trở về bản đồ người dùng"
+            >
+              <span className="material-symbols-outlined text-base">map</span>
+              <span className="hidden sm:inline">Về App</span>
+            </Link>
           </div>
         </div>
 

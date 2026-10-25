@@ -13,40 +13,57 @@ import TripPlannerPage from "./pages/TripPlannerPage";
 import MysteryFoodPage from "./pages/MysteryFoodPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import MerchantDashboardPage from "./pages/MerchantDashboardPage";
+import PortalLoginPage from "./pages/PortalLoginPage";
 
 export default function App() {
   return (
     <HashRouter>
-      <div className="flex flex-col h-screen overflow-hidden bg-[#FDFBF7]">
-        {/* Top navbar */}
-        <Navbar />
+      <Routes>
+        {/* Cổng đăng nhập độc lập dành riêng cho Admin và Chủ Quán */}
+        <Route path="/portal" element={<PortalLoginPage />} />
+        <Route path="/login" element={<PortalLoginPage />} />
 
-        {/* Body: sidebar + content */}
-        <div className="flex flex-1 overflow-hidden pt-16">
-          <Sidebar />
-          <main className="flex-1 flex overflow-hidden pb-14 md:pb-0 relative">
-            <Routes>
-              <Route path="/" element={<MapPage />} />
-              <Route path="/hotlist" element={<HotListPage />} />
-              <Route path="/ai" element={<AIPage />} />
-              <Route path="/vip" element={<VIPPage />} />
-              <Route path="/saved" element={<SavedPage />} />
-              <Route path="/review" element={<ReviewPage />} />
-              <Route path="/live" element={<LivePulsePage />} />
-              <Route path="/trip" element={<TripPlannerPage />} />
-              <Route path="/trip-planner" element={<TripPlannerPage />} />
-              <Route path="/mystery" element={<MysteryFoodPage />} />
-              <Route path="/admin" element={<AdminDashboardPage />} />
-              <Route path="/merchant" element={<MerchantDashboardPage />} />
-              {/* Fallback for sidebar items not yet implemented */}
-              <Route path="*" element={<HotListPage />} />
-            </Routes>
-          </main>
-        </div>
+        {/* Dashboard Quản Trị Viên toàn màn hình riêng biệt */}
+        <Route path="/admin" element={<AdminDashboardPage />} />
 
-        {/* Mobile bottom navigation bar */}
-        <BottomNav />
-      </div>
+        {/* Dashboard Chủ Quán toàn màn hình riêng biệt */}
+        <Route path="/merchant" element={<MerchantDashboardPage />} />
+
+        {/* Giao diện Ứng dụng Khách Hàng (kèm Navbar + Sidebar + BottomNav) */}
+        <Route
+          path="/*"
+          element={
+            <div className="flex flex-col h-screen overflow-hidden bg-[#FDFBF7]">
+              {/* Top navbar */}
+              <Navbar />
+
+              {/* Body: sidebar + content */}
+              <div className="flex flex-1 overflow-hidden pt-16">
+                <Sidebar />
+                <main className="flex-1 flex overflow-hidden pb-14 md:pb-0 relative">
+                  <Routes>
+                    <Route path="/" element={<MapPage />} />
+                    <Route path="/hotlist" element={<HotListPage />} />
+                    <Route path="/ai" element={<AIPage />} />
+                    <Route path="/vip" element={<VIPPage />} />
+                    <Route path="/saved" element={<SavedPage />} />
+                    <Route path="/review" element={<ReviewPage />} />
+                    <Route path="/live" element={<LivePulsePage />} />
+                    <Route path="/trip" element={<TripPlannerPage />} />
+                    <Route path="/trip-planner" element={<TripPlannerPage />} />
+                    <Route path="/mystery" element={<MysteryFoodPage />} />
+                    {/* Fallback for sidebar items not yet implemented */}
+                    <Route path="*" element={<HotListPage />} />
+                  </Routes>
+                </main>
+              </div>
+
+              {/* Mobile bottom navigation bar */}
+              <BottomNav />
+            </div>
+          }
+        />
+      </Routes>
     </HashRouter>
   );
 }

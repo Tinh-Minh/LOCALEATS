@@ -76,24 +76,6 @@ const sidebarNavItems = [
     badgeStyle: "hot",
     type: "hot",
   },
-  {
-    id: "merchant",
-    label: "Kênh Chủ Quán (Merchant)",
-    path: "/merchant",
-    icon: "storefront",
-    iconColor: "text-emerald-600",
-    badge: "QUÁN",
-    type: "smart",
-  },
-  {
-    id: "admin",
-    label: "Quản Trị Trung Tâm (Admin)",
-    path: "/admin",
-    icon: "admin_panel_settings",
-    iconColor: "text-purple-600",
-    badge: "ADMIN",
-    type: "vip",
-  },
 ];
 
 export default function Sidebar() {
@@ -267,10 +249,22 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Add restaurant CTA */}
-      <div className="p-2 bg-[#FAF4EE] border-t border-[#F2EAE1]">
-        <button className="w-full py-2.5 bg-gradient-to-r from-[#E84A27] to-[#FF5436] text-white rounded-xl text-[12px] font-bold flex items-center justify-center gap-1.5 hover:shadow-[0_4px_16px_rgba(232,74,39,0.35)] hover:opacity-95 transition-all">
-          <span className="material-symbols-outlined text-base">add_location_alt</span>
+      {/* Add restaurant CTA & Merchant/Admin Portal */}
+      <div className="p-2 bg-[#FAF4EE] border-t border-[#F2EAE1] flex flex-col gap-1.5">
+        <Link
+          to="/portal"
+          className="w-full py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm group"
+        >
+          <span className="material-symbols-outlined text-sm text-[#E84A27] group-hover:rotate-12 transition-transform">
+            key
+          </span>
+          Cổng Quản Trị & Đối Tác
+        </Link>
+        <button
+          onClick={() => alert("Cảm ơn bạn! Hệ thống đề xuất quán ăn cộng đồng sẽ ghi nhận thông tin.")}
+          className="w-full py-2 bg-gradient-to-r from-[#E84A27] to-[#FF5436] text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 hover:shadow-md hover:shadow-[#E84A27]/25 hover:opacity-95 transition-all"
+        >
+          <span className="material-symbols-outlined text-sm">add_location_alt</span>
           Đóng góp quán mới
         </button>
       </div>

@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { places as initialPlaces } from "../data/places";
 
 export default function AdminDashboardPage() {
+  const navigate = useNavigate();
   const [places, setPlaces] = useState(initialPlaces);
   const [activeTab, setActiveTab] = useState("overview"); // overview, places, reports, system
   const [filterDistrict, setFilterDistrict] = useState("all");
@@ -137,15 +139,30 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="bg-[#E84A27] hover:bg-[#d43d1c] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-lg shadow-[#E84A27]/30 transition-all hover:scale-105 active:scale-95"
+              className="bg-[#E84A27] hover:bg-[#d43d1c] text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-lg shadow-[#E84A27]/30 transition-all hover:scale-105 active:scale-95"
             >
               <span className="material-symbols-outlined text-base">add_business</span>
-              Thêm Quán Ăn Mới
+              <span className="hidden xs:inline">Thêm Quán Ăn Mới</span>
             </button>
-            <div className="hidden sm:flex items-center gap-2 bg-gray-800/80 px-3 py-2 rounded-xl border border-gray-700 text-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-gray-300">Máy chủ ổn định</span>
-            </div>
+            <button
+              onClick={() => {
+                sessionStorage.removeItem("localeats_admin_auth");
+                navigate("/portal");
+              }}
+              className="bg-gray-800 hover:bg-red-950/80 hover:border-red-700/60 text-gray-300 hover:text-red-300 px-3 py-2 rounded-xl border border-gray-700 text-xs font-bold flex items-center gap-1 transition-all"
+              title="Đăng xuất khỏi hệ thống quản trị"
+            >
+              <span className="material-symbols-outlined text-base">logout</span>
+              <span className="hidden sm:inline">Đăng xuất</span>
+            </button>
+            <Link
+              to="/"
+              className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-xl border border-gray-700 text-xs font-bold flex items-center gap-1 transition-all"
+              title="Trở về bản đồ người dùng"
+            >
+              <span className="material-symbols-outlined text-base">map</span>
+              <span className="hidden sm:inline">Về App</span>
+            </Link>
           </div>
         </div>
 
