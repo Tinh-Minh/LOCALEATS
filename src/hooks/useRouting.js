@@ -123,8 +123,8 @@ export default function useRouting() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState(LOC_STATUS.PENDING);
 
-  // Cache for real GPS position (avoid asking repeatedly)
-  const gpsCache = useRef(null);
+  // Real GPS position tracking (vị trí GPS thực tế được trình duyệt cấp)
+  const realGpsRef = useRef(null);
   const gpsPending = useRef(null);
 
   // Default fallback location (HCM City center - near Bến Thành)
@@ -133,11 +133,11 @@ export default function useRouting() {
   // Get user's current location - shares a single GPS promise to avoid duplicate requests
   const getUserLocation = useCallback(() => {
     // If we already got a real GPS position recently (<60s), reuse it
-    if (gpsCache.current && (Date.now() - gpsCache.current.timestamp) < 60000) {
-      console.log("[Routing] Using cached GPS position:", gpsCache.current.loc);
-      setUserLocation(gpsCache.current.loc);
+    if (realGpsRef.current && (Date.now() - realGpsRef.current.timestamp) < 60000) {
+      console.log("[Routing] Using cached GPS position:", realGpsRef.current.loc);
+      setUserLocation(realGpsRef.current.loc);
       setLocationStatus(LOC_STATUS.GPS_OK);
-      return Promise.resolve(gpsCache.current.loc);
+      return Promise.resolve(realGpsRef.current.loc);
     }
 
     // If a GPS request is already in progress, reuse the same promise
@@ -149,8 +149,9 @@ export default function useRouting() {
     if (!navigator.geolocation) {
       console.warn("[Routing] Geolocation API not available");
       setLocationStatus(LOC_STATUS.UNAVAILABLE);
-      setUserLocation(FALLBACK);
-      return Promise.resolve(FALLBACK);
+      const loc = realGpsRef.current?.loc || FALLBACK;
+      setUserLocation(loc);
+      return Promise.resolve(loc);
     }
 
     setLocationStatus(LOC_STATUS.PENDING);
@@ -161,7 +162,7 @@ export default function useRouting() {
         (pos) => {
           const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           console.log("[Routing] ✅ Got real GPS:", loc, "accuracy:", pos.coords.accuracy, "m");
-          gpsCache.current = { loc, timestamp: Date.now() };
+          realGpsRef.current = { loc, timestamp: Date.now() };
           setUserLocation(loc);
           setLocationStatus(LOC_STATUS.GPS_OK);
           gpsPending.current = null;
@@ -178,9 +179,10 @@ export default function useRouting() {
             status = LOC_STATUS.FALLBACK;
           }
           setLocationStatus(status);
-          setUserLocation(FALLBACK);
+          const loc = realGpsRef.current?.loc || FALLBACK;
+          setUserLocation(loc);
           gpsPending.current = null;
-          resolve(FALLBACK);
+          resolve(loc);
         },
         {
           enableHighAccuracy: true,
@@ -275,8 +277,8 @@ export default function useRouting() {
     setRouteData(null);
     setRouteError(null);
     setLocationStatus(LOC_STATUS.PENDING);
-    if (gpsCache.current?.loc) {
-      setUserLocation(gpsCache.current.loc);
+    if (realGpsRef.current?.loc) {
+      setUserLocation(realGpsRef.current.loc);
       setLocationStatus(LOC_STATUS.GPS_OK);
     } else {
       getUserLocation();
@@ -296,7 +298,7 @@ export default function useRouting() {
   const retryWithGps = useCallback(async () => {
     console.log("[Routing] Retrying GPS location...");
     // Clear cached position to force a fresh GPS request
-    gpsCache.current = null;
+    realGpsRef.current = null;
     setLocationStatus(LOC_STATUS.PENDING);
 
     if (routeData?.destination) {

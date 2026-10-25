@@ -9,20 +9,20 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
   const hasFireFlame = isTopRated || place.hot;
 
   const sizeClasses = isTopRated
-    ? "w-8 h-8 sm:w-11 sm:h-11"
+    ? "w-8 h-8 sm:w-14 sm:h-14 md:w-16 md:h-16"
     : isHighRated
-    ? "w-7 h-7 sm:w-10 sm:h-10"
-    : "w-6 h-6 sm:w-9 sm:h-9";
+    ? "w-7 h-7 sm:w-12 sm:h-12 md:w-14 md:h-14"
+    : "w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12";
 
   const iconSizeClasses = isTopRated
-    ? "text-[14px] sm:text-[18px]"
+    ? "text-[14px] sm:text-[22px] md:text-[26px]"
     : isHighRated
-    ? "text-[12px] sm:text-[16px]"
-    : "text-[11px] sm:text-[14px]";
+    ? "text-[12px] sm:text-[19px] md:text-[22px]"
+    : "text-[11px] sm:text-[16px] md:text-[18px]";
 
   const ratingTextClasses = isTopRated
-    ? "text-[7.5px] sm:text-[9.5px] font-black"
-    : "text-[7px] sm:text-[9px] font-extrabold";
+    ? "text-[7.5px] sm:text-[11px] md:text-[12px] font-black"
+    : "text-[7px] sm:text-[10px] md:text-[11px] font-extrabold";
 
   return (
     <button
@@ -53,7 +53,7 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
       {/* Cấu trúc ngọn lửa bùng cháy chuẩn theo ảnh mẫu bao bọc lấy icon quán */}
       <div className="relative flex items-center justify-center">
         {hasFireFlame && (
-          <div className="absolute -inset-3.5 sm:-inset-5 flex items-center justify-center pointer-events-none animate-flame-soft">
+          <div className="absolute -inset-3.5 sm:-inset-7 md:-inset-8 flex items-center justify-center pointer-events-none animate-flame-soft">
             <img
               src={fireImage}
               alt="fire"
@@ -66,12 +66,12 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
         <span
           className={`relative z-10 ${sizeClasses} rounded-full bg-white flex flex-col items-center justify-center transition-all duration-300 shadow-md ${
             active
-              ? "border-2 border-[#E84A27] ring-2 ring-orange-300/60 shadow-lg"
+              ? "border-2 sm:border-3 border-[#E84A27] ring-2 sm:ring-4 ring-orange-300/60 shadow-lg"
               : isInItinerary
               ? itineraryOrder === 1
-                ? "border-2 border-[#E84A27] shadow-orange-500/25"
-                : "border-2 border-[#06b6d4] shadow-cyan-500/25"
-              : "border-[1.5px] border-orange-200/90 hover:border-[#E84A27]"
+                ? "border-2 sm:border-3 border-[#E84A27] shadow-orange-500/25"
+                : "border-2 sm:border-3 border-[#06b6d4] shadow-cyan-500/25"
+              : "border-[1.5px] sm:border-2 border-orange-200/90 hover:border-[#E84A27]"
           }`}
         >
           <span
@@ -89,7 +89,7 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
 
       {/* Tên quán ăn */}
       <span
-        className={`relative mt-0.5 px-1.5 sm:px-2 py-0.2 sm:py-0.5 rounded-full text-[8.5px] sm:text-[10px] font-bold shadow-sm whitespace-nowrap transition-all duration-300 border max-w-[85px] sm:max-w-[120px] truncate ${
+        className={`relative mt-0.5 px-1.5 sm:px-2.5 py-0.2 sm:py-0.5 rounded-full text-[8.5px] sm:text-[11px] font-bold shadow-sm whitespace-nowrap transition-all duration-300 border max-w-[85px] sm:max-w-[140px] truncate ${
           active
             ? "bg-[#E84A27] text-white border-[#E84A27] shadow-md scale-105 inline-block"
             : isInItinerary
