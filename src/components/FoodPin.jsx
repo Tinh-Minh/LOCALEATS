@@ -124,10 +124,10 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
         </span>
       )}
 
-      {/* Cấu trúc ngọn lửa bùng cháy chuẩn bao bọc lấy icon quán - ĐƯỢC XÍCH LÊN PHÍA TRÊN */}
+      {/* Cấu trúc ngọn lửa bùng cháy chuẩn bao bọc lấy icon quán - ngọn lửa vươn lên cao, icon quán nằm ở phần dưới của ngọn lửa */}
       <div className="relative flex items-center justify-center">
         {hasFireFlame && (
-          <div className="absolute -inset-3.5 sm:-inset-7 md:-inset-8 -translate-y-2 sm:-translate-y-3 md:-translate-y-4 flex items-center justify-center pointer-events-none animate-flame-soft">
+          <div className="absolute -inset-x-3.5 -bottom-1 -top-7 sm:-inset-x-7 sm:-bottom-2 sm:-top-13 md:-inset-x-8 md:-bottom-2.5 md:-top-16 flex items-center justify-center pointer-events-none animate-flame-soft">
             <img
               src={fireImage}
               alt="fire"
@@ -136,7 +136,7 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
           </div>
         )}
 
-        {/* Icon quán nằm lọt lòng gọn gàng bên trong ngọn lửa */}
+        {/* Icon quán nằm lọt lòng gọn gàng ở phần dưới của ngọn lửa */}
         <span
           className={`relative z-10 ${sizeClasses} rounded-full bg-white flex flex-col items-center justify-center transition-all duration-300 shadow-md ${
             active
