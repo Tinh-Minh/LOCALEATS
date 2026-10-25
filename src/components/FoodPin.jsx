@@ -124,19 +124,19 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
         </span>
       )}
 
-      {/* Cấu trúc ngọn lửa bùng cháy chuẩn bao bọc lấy icon quán - ngọn lửa vươn lên cao, icon quán nằm ở phần dưới của ngọn lửa */}
+      {/* Cấu trúc ngọn lửa bùng cháy chuẩn bao bọc lấy icon quán - ngọn lửa vươn lên cao, icon quán nằm sát đáy của ngọn lửa */}
       <div className="relative flex items-center justify-center">
         {hasFireFlame && (
-          <div className="absolute -inset-x-3.5 -bottom-1 -top-7 sm:-inset-x-7 sm:-bottom-2 sm:-top-13 md:-inset-x-8 md:-bottom-2.5 md:-top-16 flex items-center justify-center pointer-events-none animate-flame-soft">
+          <div className="absolute -inset-x-3.5 bottom-0 -top-10 sm:-inset-x-7 sm:bottom-0 sm:-top-18 md:-inset-x-8 md:bottom-0 md:-top-22 flex items-center justify-center pointer-events-none animate-flame-soft">
             <img
               src={fireImage}
               alt="fire"
-              className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(232,74,39,0.3)] opacity-90 select-none"
+              className="w-full h-full object-contain object-bottom filter drop-shadow-[0_2px_8px_rgba(232,74,39,0.3)] opacity-90 select-none"
             />
           </div>
         )}
 
-        {/* Icon quán nằm lọt lòng gọn gàng ở phần dưới của ngọn lửa */}
+        {/* Icon quán nằm lọt lòng sát đáy của ngọn lửa */}
         <span
           className={`relative z-10 ${sizeClasses} rounded-full bg-white flex flex-col items-center justify-center transition-all duration-300 shadow-md ${
             active
