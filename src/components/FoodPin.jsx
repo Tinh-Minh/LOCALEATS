@@ -1,5 +1,77 @@
 import fireImage from "/fire-icon.png";
 
+// Helper xác định icon ẩm thực theo chủ đề quán bán (ví dụ: hải sản/tôm mực, phở, bánh mì...)
+function getFoodThematicIcon(place) {
+  if (!place) return { type: "emoji", value: "🍽️" };
+  if (place.icon) return { type: "emoji", value: place.icon };
+
+  const cat = (place.category || "").toLowerCase();
+  const name = (place.name || "").toLowerCase();
+  const spec = (place.specialty || "").toLowerCase();
+
+  // Quán bán hải sản, ốc, tôm, mực
+  if (cat.includes("hải sản") || cat.includes("ốc") || spec.includes("ốc") || spec.includes("tôm") || spec.includes("mực") || name.includes("ốc")) {
+    return { type: "emoji", value: "🦐" }; // Tôm/Hải sản
+  }
+  // Bánh mì
+  if (cat.includes("bánh mì") || name.includes("bánh mì")) {
+    return { type: "emoji", value: "🥖" };
+  }
+  // Phở / Hủ tiếu
+  if (cat.includes("phở") || name.includes("phở")) {
+    return { type: "emoji", value: "🍜" };
+  }
+  if (cat.includes("hủ tiếu") || name.includes("hủ tiếu")) {
+    return { type: "emoji", value: "🍜" };
+  }
+  // Cơm / Cơm tấm
+  if (cat.includes("cơm") || name.includes("cơm")) {
+    return { type: "emoji", value: "🍚" };
+  }
+  // Bún bò
+  if (cat.includes("bún bò") || name.includes("bún bò")) {
+    return { type: "emoji", value: "🍲" };
+  }
+  // Bún đậu mắm tôm
+  if (cat.includes("bún đậu") || name.includes("bún đậu")) {
+    return { type: "emoji", value: "🥢" };
+  }
+  // Lẩu các loại
+  if (cat.includes("lẩu") || name.includes("lẩu")) {
+    return { type: "emoji", value: "🥘" };
+  }
+  // Đồ nướng / BBQ
+  if (cat.includes("nướng") || name.includes("nướng")) {
+    return { type: "emoji", value: "🥩" };
+  }
+  // Gỏi cuốn
+  if (cat.includes("gỏi cuốn") || name.includes("gỏi cuốn")) {
+    return { type: "emoji", value: "🥗" };
+  }
+  // Bánh xèo
+  if (cat.includes("bánh xèo") || name.includes("bánh xèo")) {
+    return { type: "emoji", value: "🥞" };
+  }
+  // Cháo lòng
+  if (cat.includes("cháo") || name.includes("cháo")) {
+    return { type: "emoji", value: "🥣" };
+  }
+  // Xôi
+  if (cat.includes("xôi") || name.includes("xôi")) {
+    return { type: "emoji", value: "🍙" };
+  }
+  // Trà sữa / Nước
+  if (cat.includes("trà sữa") || name.includes("trà sữa") || cat.includes("cà phê")) {
+    return { type: "emoji", value: "🧋" };
+  }
+  // Tráng miệng / Chè
+  if (cat.includes("tráng miệng") || cat.includes("chè") || name.includes("chè")) {
+    return { type: "emoji", value: "🍧" };
+  }
+
+  return { type: "material", value: "restaurant" };
+}
+
 export default function FoodPin({ place, active, onClick, itineraryOrder }) {
   const rating = Number(place.rating) || 4.0;
 
@@ -23,6 +95,8 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
   const ratingTextClasses = isTopRated
     ? "text-[7.5px] sm:text-[11px] md:text-[12px] font-black"
     : "text-[7px] sm:text-[10px] md:text-[11px] font-extrabold";
+
+  const foodIcon = getFoodThematicIcon(place);
 
   return (
     <button
@@ -50,10 +124,10 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
         </span>
       )}
 
-      {/* Cấu trúc ngọn lửa bùng cháy chuẩn theo ảnh mẫu bao bọc lấy icon quán */}
+      {/* Cấu trúc ngọn lửa bùng cháy chuẩn bao bọc lấy icon quán - ĐƯỢC XÍCH LÊN PHÍA TRÊN */}
       <div className="relative flex items-center justify-center">
         {hasFireFlame && (
-          <div className="absolute -inset-3.5 sm:-inset-7 md:-inset-8 flex items-center justify-center pointer-events-none animate-flame-soft">
+          <div className="absolute -inset-3.5 sm:-inset-7 md:-inset-8 -translate-y-2 sm:-translate-y-3 md:-translate-y-4 flex items-center justify-center pointer-events-none animate-flame-soft">
             <img
               src={fireImage}
               alt="fire"
@@ -74,13 +148,19 @@ export default function FoodPin({ place, active, onClick, itineraryOrder }) {
               : "border-[1.5px] sm:border-2 border-orange-200/90 hover:border-[#E84A27]"
           }`}
         >
-          <span
-            className={`material-symbols-outlined leading-none ${
-              isInItinerary && itineraryOrder !== 1 ? "text-[#0891b2]" : "text-[#E84A27]"
-            } ${iconSizeClasses}`}
-          >
-            restaurant
-          </span>
+          {foodIcon.type === "emoji" ? (
+            <span className={`leading-none select-none ${iconSizeClasses}`}>
+              {foodIcon.value}
+            </span>
+          ) : (
+            <span
+              className={`material-symbols-outlined leading-none ${
+                isInItinerary && itineraryOrder !== 1 ? "text-[#0891b2]" : "text-[#E84A27]"
+              } ${iconSizeClasses}`}
+            >
+              {foodIcon.value}
+            </span>
+          )}
           <span className={`${ratingTextClasses} text-gray-800 -mt-0.5 flex items-center gap-0.5 leading-none`}>
             {place.rating} <span className="text-amber-500 text-[7px] sm:text-[9.5px] leading-none">★</span>
           </span>
