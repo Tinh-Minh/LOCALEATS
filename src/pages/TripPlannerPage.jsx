@@ -326,7 +326,7 @@ export default function TripPlannerPage() {
         </span>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 animate-fadeIn">
           <div>
@@ -334,7 +334,7 @@ export default function TripPlannerPage() {
               <span className="material-symbols-outlined text-[15px]">route</span>
               THIẾT LẬP HÀNH TRÌNH ĐA ĐIỂM DỪNG
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
               Kế Hoạch Chuyến Đi & <span className="gradient-text-premium">Food Tour Ẩm Thực</span>
             </h1>
             <p className="text-[13px] text-gray-600 mt-1 max-w-2xl leading-relaxed">
@@ -362,7 +362,7 @@ export default function TripPlannerPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
           {/* Cột 1 & 2: Bảng lộ trình Timeline các điểm dừng chân */}
           <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-200/90 shadow-sm p-5 sm:p-6 animate-slideInUp">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100 mb-5">
               <div className="flex items-center gap-2">
                 <span className="w-8 h-8 rounded-full bg-orange-100 text-[#E84A27] flex items-center justify-center">
                   <span className="material-symbols-outlined text-[18px]">flag</span>

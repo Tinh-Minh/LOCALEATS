@@ -16,6 +16,7 @@ export default function MerchantDashboardPage() {
   const [activeNav, setActiveNav] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(true);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const currentPlace = useMemo(() => {
     return places.find((p) => p.id === selectedPlaceId) || places[0];
@@ -48,7 +49,7 @@ export default function MerchantDashboardPage() {
       }`}>
         <div className="flex flex-col">
           {/* Logo brand */}
-          <div className="h-16 flex items-center px-6 gap-3 bg-[#FFF1E8] border-b border-[#F2DFD1]/70">
+          <div className="h-16 flex items-center justify-between px-6 bg-[#FFF1E8] border-b border-[#F2DFD1]/70">
             <Link to="/" className="flex items-center gap-2.5 group">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#DE3618] to-[#FD9013] flex items-center justify-center text-white shadow-md shadow-[#DE3618]/25 group-hover:scale-105 transition-transform">
                 <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -60,6 +61,14 @@ export default function MerchantDashboardPage() {
                 <span className="text-[11px] text-[#5C403A] font-semibold mt-0.5">Merchant Portal</span>
               </div>
             </Link>
+            <button
+              type="button"
+              onClick={() => setIsMobileNavOpen(false)}
+              className="lg:hidden p-1.5 rounded-xl text-[#5C403A] hover:bg-[#FEEADC] transition-colors"
+              title="Đóng menu"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
           </div>
 
           {/* Chi nhánh đang chọn */}
