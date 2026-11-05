@@ -74,7 +74,8 @@ export default function MapPage() {
   }, [location.state, location.pathname, navigate, startRoute]);
 
   // Lọc quán ăn theo chip danh mục + bộ lọc giờ mở cửa + từ khóa tìm kiếm
-  const filteredPlaces = places.filter((p) => {
+  const filteredPlaces = (places || []).filter((p) => {
+    if (!p) return false;
     // 1. Lọc theo từ khóa tìm kiếm nếu có
     if (mapSearchQuery.trim()) {
       const q = mapSearchQuery.toLowerCase();
@@ -102,7 +103,7 @@ export default function MapPage() {
   });
 
   const destinationStop = itineraryStops?.find((s) => s.isDestination && s.id === selectedId);
-  const place = places.find((p) => p.id === selectedId) || (destinationStop ? {
+  const place = (places || []).find((p) => p?.id === selectedId) || (destinationStop ? {
     id: destinationStop.id,
     name: destinationStop.name,
     address: destinationStop.address,

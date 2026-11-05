@@ -433,7 +433,7 @@ export const places = [
     walkMin: 15,
     trendRank: 2,
     waitTime: "10 phút",
-  },,
+  },
   {
       "id": 17,
       "restaurantId": "1214715",
