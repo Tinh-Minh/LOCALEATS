@@ -31,7 +31,7 @@ export default function AdminLiveMapTab({ onNavigateTab }) {
       {/* Main Stitch Screen Content */}
       <main className="relative pt-18 bg-surface min-h-screen"><div className="flex flex-col w-full">
 {/*  Sub-header Breadcrumb & Realtime Ribbon  */}
-<div className="px-8 pt-6 pb-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+<div className="px-3 sm:px-6 lg:px-8 pt-6 pb-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
 <div className="flex flex-col">
 <div className="flex items-center gap-2">
 <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider font-extrabold flex items-center gap-1.5">
@@ -73,7 +73,7 @@ export default function AdminLiveMapTab({ onNavigateTab }) {
 </div>
 </div>
 {/*  Primary Top Interactive Toolbar (Filter, Projections, Layer Toggles)  */}
-<div className="px-8 pb-4">
+<div className="px-3 sm:px-6 lg:px-8 pb-4">
 <div className="bg-surface-container-lowest rounded-3xl p-4 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
 {/*  Geographic Focus Chips  */}
 <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
@@ -151,7 +151,7 @@ export default function AdminLiveMapTab({ onNavigateTab }) {
 </div>
 </div>
 {/*  KPI Metrics Ribbon (Top Bar)  */}
-<div className="px-8 pb-5">
+<div className="px-3 sm:px-6 lg:px-8 pb-5">
 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 {/*  Metric 1  */}
 <div className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
@@ -241,10 +241,10 @@ export default function AdminLiveMapTab({ onNavigateTab }) {
 </div>
 </div>
 {/*  Main Canvas & Dispatch Layout Split (12-Column Grid)  */}
-<div className="px-8 pb-10 grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+<div className="px-3 sm:px-6 lg:px-8 pb-10 grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
 {/*  Hero Interactive GPS Fleet Canvas (Span 8.5 Col)  */}
 <div className="xl:col-span-8 flex flex-col gap-4">
-<div className="relative bg-surface-container-lowest rounded-3xl shadow-md overflow-hidden h-[740px] flex flex-col">
+<div className="relative bg-surface-container-lowest rounded-3xl shadow-md overflow-hidden h-[420px] sm:h-[560px] xl:h-[740px] flex flex-col">
 {/*  Live Map Canvas Layer (Dynamic Region-aware & Anchored GPS Pins - No Bouncing/Jumping)  */}
 <div className="absolute inset-0 w-full h-full bg-cover bg-center overflow-hidden transition-all duration-500" data-location={activeRegion === "hn" ? "Hanoi, Vietnam" : activeRegion === "hcm" ? "Ho Chi Minh City, Vietnam" : activeRegion === "dn" ? "Da Nang, Vietnam" : "Vietnam National Map"} style={{ backgroundImage: activeRegion === "hn" ? "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDBPjHfiavlMhMb0i4qQO_tNAus_Nv_8IjuJXeZ57Hd99-jMSvrXksN0c5R16RvaKiJ04KaTsES0wBioQPsrAZG9f3r2PxWeck-Z0he6WGgt3RaC9C2O_6oATwcDRS6kev2vnr0r82tBzAMR20_shb1Og8wVThKFjIN1jpm0y3gal05X8liwWy0TdZsxH6hl150feTWyfAB_2ZNh5y7gRGseIIyzCrQjgasGtwiIu0')" : "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBcP_MxNcCTTG_bTAAVR6_LUD6942ooHKAAzEqcumko-1LEhCccXMkajj65jFBGohGkN0TUWvrkyNDMfEd6nTRnEOETPyACB_PXmTClqS3V2X3Y2fnXioDDRfIgnqSNa2UChFciqzxUGhK3_-6byOX3zK1AMtuzGfuEvkvKOWNXxfJ1wARO78i4wcyrshwBcUvW_XJVDU5sAXNs7zpc1148WoskS279apNnDmuU_aQ')" }}>
 {/*  Heatmap Gradient Luminous Ambient Glows  */}

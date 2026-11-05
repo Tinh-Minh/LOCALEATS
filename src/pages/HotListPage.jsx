@@ -49,7 +49,7 @@ export default function HotListPage() {
               <span className="material-symbols-outlined text-[14px] sm:text-[15px]">local_fire_department</span>
               BẢNG XẾP HẠNG ẨM THỰC THỊNH HÀNH
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-2xl sm:text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
               Quán Ăn & Món Ngon <span className="gradient-text-premium">Đang Gây Bão</span>
             </h1>
             <p className="text-[12px] sm:text-[13px] text-gray-600 mt-1 max-w-2xl leading-relaxed">

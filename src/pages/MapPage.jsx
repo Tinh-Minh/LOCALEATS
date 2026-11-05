@@ -91,6 +91,7 @@ export default function MapPage() {
 
     // 3. Lọc theo chip danh mục
     if (activeFilter === "hot") return true;
+    if (activeFilter === "thuduc") return p.district === "TP. Thủ Đức";
     if (activeFilter === "pho") return p.category.includes("Phở") || p.category.includes("Bún");
     if (activeFilter === "banhmi") return p.category.includes("Bánh Mì");
     if (activeFilter === "seafood") return p.category.includes("Hải Sản") || p.category.includes("Ốc");

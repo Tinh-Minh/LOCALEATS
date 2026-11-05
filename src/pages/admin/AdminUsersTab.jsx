@@ -29,7 +29,7 @@ export default function AdminUsersTab({ onNavigateTab }) {
 
       {/* Main Stitch Screen Content */}
       <main className="relative pt-18 bg-surface min-h-screen"><div className="flex flex-col w-full">
-<div className="p-8 space-y-8 max-w-[1720px] mx-auto w-full">
+<div className="p-3 sm:p-6 lg:p-8 space-y-8 max-w-[1720px] mx-auto w-full">
 {/*  Top Action Header Banner  */}
 <div className="relative overflow-hidden rounded-3xl bg-surface-container-low p-8 shadow-sm">
 <div className="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div>

@@ -29,7 +29,7 @@ export default function AdminKycTab({ onNavigateTab }) {
 
       {/* Main Stitch Screen Content */}
       <main className="relative pt-18 bg-surface min-h-screen"><div className="flex flex-col w-full">
-<div className="p-8 max-w-[1720px] mx-auto w-full space-y-8">
+<div className="p-3 sm:p-6 lg:p-8 max-w-[1720px] mx-auto w-full space-y-8">
 {/*  Top Editorial Header & Operational Live Strip  */}
 <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 bg-surface-container p-6 rounded-3xl shadow-sm">
 <div className="space-y-1.5">

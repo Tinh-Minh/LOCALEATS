@@ -49,7 +49,7 @@ export default function SavedPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar p-6 bg-[#FDFBF7] page-enter max-w-5xl mx-auto w-full">
+    <div className="flex-1 overflow-y-auto no-scrollbar px-3 sm:px-6 py-4 sm:py-6 bg-[#FDFBF7] page-enter max-w-5xl mx-auto w-full">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
         <div>
           <div className="inline-flex items-center gap-1.5 bg-orange-100 text-[#E84A27] text-[11px] font-black px-3 py-1 rounded-full mb-1">

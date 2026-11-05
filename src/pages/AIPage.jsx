@@ -89,10 +89,10 @@ export default function AIPage() {
         </span>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
         {/* Tiêu đề chính */}
         <div className="mb-6 animate-fadeIn">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
             Hôm Nay Bạn Muốn Ăn Gì? <span className="gradient-text-premium">Để AI Gợi Ý</span>
           </h1>
           <p className="text-[13px] text-gray-600 mt-1 max-w-2xl leading-relaxed">

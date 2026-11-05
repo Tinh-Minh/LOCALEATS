@@ -46,7 +46,7 @@ export default function VIPPage() {
         </p>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 animate-fadeIn">
           <div>
@@ -57,7 +57,7 @@ export default function VIPPage() {
               </span>
               <span className="text-[12px] text-gray-500 font-medium">Bảo chứng bởi TasteMaker Sài Gòn</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
               Quán Được Tài Trợ & <span className="gradient-text-premium">Ưu Đãi VIP</span>
             </h1>
             <p className="text-[13px] text-gray-600 mt-1.5 max-w-2xl leading-relaxed">

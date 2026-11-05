@@ -251,6 +251,43 @@ export default function PlacePopup({ place, userLocation, onClose, onStartRoute,
           </div>
         </div>
 
+        {/* THỰC ĐƠN ĐẶC SẮC (DISHES) TỪ SHOPEEFOOD / THỦ ĐỨC */}
+        {place.dishes && place.dishes.length > 0 && (
+          <div className="bg-gradient-to-br from-amber-50/70 via-orange-50/40 to-white rounded-2xl p-2.5 sm:p-3 border border-amber-200/70 flex flex-col gap-2 animate-slideInUp">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black text-gray-800 flex items-center gap-1.5 uppercase tracking-wide">
+                <span className="material-symbols-outlined text-orange-600 text-sm">restaurant</span>
+                Thực đơn quán ({place.dishes.length} món nổi bật)
+              </span>
+              <span className="text-[10px] font-bold text-orange-600 bg-orange-100/80 px-1.5 py-0.5 rounded-full">Menu Giá Chuẩn</span>
+            </div>
+            
+            <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 pt-0.5">
+              {place.dishes.map((dish, dIdx) => (
+                <div key={dIdx} className="flex-shrink-0 w-28 bg-white rounded-xl p-1.5 border border-amber-100/80 shadow-2xs hover:shadow-sm transition-all group">
+                  <div className="w-full h-18 rounded-lg overflow-hidden bg-gray-100 relative mb-1.5">
+                    <img
+                      src={dish.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&q=80"}
+                      alt={dish.name}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&q=80";
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <h4 className="text-[10.5px] font-bold text-gray-800 line-clamp-2 leading-tight group-hover:text-orange-600 transition-colors">
+                    {dish.name}
+                  </h4>
+                  <p className="text-[10px] font-black text-[#E84A27] mt-1">
+                    {typeof dish.price === "number" ? dish.price.toLocaleString("vi-VN") + "đ" : dish.price}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* CTA buttons */}
         <div className="flex gap-2 animate-slideInUp mt-0.5" style={{ animationDelay: '0.3s' }}>
           <button

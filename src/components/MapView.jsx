@@ -72,12 +72,32 @@ const MapView = forwardRef(function MapView(
     }
   };
 
+  // Lọc sạch toàn bộ icon quán xá, địa điểm của Google Maps (giữ nguyên 100% tên đường & đường phố)
+  const [hideGooglePoi, setHideGooglePoi] = useState(() => {
+    try {
+      const saved = localStorage.getItem("localeats_hide_google_poi");
+      return saved !== null ? saved === "true" : true; // Mặc định BẬT ẩn để bản đồ sạch đẹp
+    } catch {
+      return true;
+    }
+  });
+
+  const handleTogglePoi = () => {
+    setHideGooglePoi((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("localeats_hide_google_poi", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const currentMapStyle = useMemo(() => {
     if (mapMode === "3d") {
       return MAP_STYLE_3D;
     }
-    return getGoogleMapStyle(mapMode, showTraffic);
-  }, [mapMode, showTraffic]);
+    return getGoogleMapStyle(mapMode, showTraffic, hideGooglePoi);
+  }, [mapMode, showTraffic, hideGooglePoi]);
 
   // Expose các phương thức điều khiển bản đồ ra ngoài cho component cha (MapPage)
   useImperativeHandle(ref, () => ({
@@ -264,11 +284,30 @@ const MapView = forwardRef(function MapView(
           </button>
         </div>
 
-        {/* Hàng 2: Nút bật/tắt Lớp Giao thông thời gian thực (Live Traffic / Báo kẹt xe của Google) */}
-        <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full shadow-lg border border-gray-200/90 text-[10px] sm:text-[11px] font-black">
+        {/* Hàng 2: Bộ lọc ẩn icon rác của Google & Lớp Giao thông thời gian thực */}
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+          {/* Nút Ẩn/Hiện icon rác Google */}
           <button
             type="button"
-            onClick={handleToggleTraffic}
+            onClick={handleTogglePoi}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full shadow-lg border border-gray-200/90 text-[10px] sm:text-[11px] font-black transition-all cursor-pointer backdrop-blur-md ${
+              hideGooglePoi
+                ? "bg-amber-500 text-white shadow-amber-500/25"
+                : "bg-white/95 text-gray-700 hover:bg-gray-100"
+            }`}
+            title="Ẩn/Hiện toàn bộ các icon quán xá và địa điểm của Google Maps (giữ nguyên tên đường)"
+          >
+            <span className="material-symbols-outlined text-[14px]">
+              {hideGooglePoi ? "visibility_off" : "visibility"}
+            </span>
+            <span>{hideGooglePoi ? "Đã ẩn icon Google" : "Hiện icon Google"}</span>
+          </button>
+
+          {/* Lớp Live Traffic */}
+          <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full shadow-lg border border-gray-200/90 text-[10px] sm:text-[11px] font-black">
+            <button
+              type="button"
+              onClick={handleToggleTraffic}
             className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full transition-all cursor-pointer ${
               showTraffic
                 ? "bg-rose-500 text-white shadow-sm"
@@ -295,6 +334,7 @@ const MapView = forwardRef(function MapView(
               <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-600" /> Kẹt</span>
             </div>
           )}
+          </div>
         </div>
       </div>
 

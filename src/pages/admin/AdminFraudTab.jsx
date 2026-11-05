@@ -30,7 +30,7 @@ export default function AdminFraudTab({ onNavigateTab }) {
       {/* Main Stitch Screen Content */}
       <main className="relative pt-18 bg-surface min-h-screen"><div className="flex flex-col w-full">
 
-<div className="px-8 py-6 flex flex-col gap-8 max-w-[1600px] mx-auto w-full">
+<div className="px-3 sm:px-6 lg:px-8 py-6 flex flex-col gap-8 max-w-[1600px] mx-auto w-full">
 <div className="relative overflow-hidden rounded-3xl bg-surface-container-low p-8 shadow-sm">
 <div className="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
 <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">

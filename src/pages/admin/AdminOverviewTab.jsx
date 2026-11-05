@@ -90,7 +90,7 @@ export default function AdminOverviewTab({ onNavigateTab }) {
       )}
 
       {/* Top Banner & Enterprise Macro Controls */}
-      <div className="relative overflow-hidden bg-[#FFF1E8] rounded-3xl px-8 py-8 shadow-sm border border-[#F2DFD1]">
+      <div className="relative overflow-hidden bg-[#FFF1E8] rounded-3xl px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 shadow-sm border border-[#F2DFD1]">
         <div className="absolute -right-20 -top-24 w-96 h-96 rounded-full bg-[#DE3618]/10 blur-3xl pointer-events-none" />
         <div className="absolute left-1/3 -bottom-20 w-80 h-80 rounded-full bg-[#FD9013]/10 blur-2xl pointer-events-none" />
 

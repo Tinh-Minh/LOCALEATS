@@ -30,7 +30,7 @@ export default function AdminReviewSentinelTab({ onNavigateTab }) {
       {/* Main Stitch Screen Content */}
       <main className="relative pt-18 bg-surface min-h-screen"><div className="flex flex-col w-full">
 {/*  Subtle Glowing Amber Ambient Behind Header  */}
-<div className="relative px-8 pt-8 pb-10 flex flex-col gap-8 overflow-hidden">
+<div className="relative px-3 sm:px-6 lg:px-8 pt-8 pb-10 flex flex-col gap-8 overflow-hidden">
 <div className="absolute -top-32 right-12 w-96 h-96 rounded-full bg-gradient-to-br from-primary/10 via-secondary-container/10 to-transparent blur-3xl pointer-events-none"></div>
 {/*  Editorial Header Section  */}
 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">

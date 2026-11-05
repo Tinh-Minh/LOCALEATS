@@ -29,7 +29,7 @@ export default function AdminKolTab({ onNavigateTab }) {
 
       {/* Main Stitch Screen Content */}
       <main className="relative pt-18 bg-surface min-h-screen"><div className="flex flex-col w-full">
-<div className="px-8 py-8 flex flex-col gap-8 max-w-[1720px] mx-auto w-full">
+<div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 flex flex-col gap-8 max-w-[1720px] mx-auto w-full">
 {/*  Header Section  */}
 <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
 <div className="flex flex-col gap-2 max-w-4xl">

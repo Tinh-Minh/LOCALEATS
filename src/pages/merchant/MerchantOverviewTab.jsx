@@ -222,7 +222,7 @@ export default function MerchantOverviewTab({
         </div>
 
         {/* VIP Positioning Ribbon Alert */}
-        <div className="mt-6 pt-4 bg-gradient-to-r from-[#FFDCC2]/60 via-[#FFDAD3]/40 to-transparent -mx-6 md:-mx-8 px-6 md:px-8 flex flex-col md:flex-row md:items-center justify-between gap-3 border-t border-[#F2DFD1]">
+        <div className="mt-6 pt-4 bg-gradient-to-r from-[#FFDCC2]/60 via-[#FFDAD3]/40 to-transparent -mx-6 md:-mx-8 px-6 md:px-3 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-3 border-t border-[#F2DFD1]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[#FD9013] text-white flex items-center justify-center shrink-0 shadow-sm">
               <span className="material-symbols-outlined text-sm">workspace_premium</span>

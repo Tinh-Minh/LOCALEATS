@@ -200,11 +200,11 @@ export default function ReviewPage() {
         </span>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 animate-fadeIn">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
               Góc Review Ẩm Thực <span className="gradient-text-premium">Thực Tế</span>
             </h1>
             <p className="text-[13px] text-gray-600 mt-1 max-w-2xl leading-relaxed">

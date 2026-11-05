@@ -34,7 +34,18 @@ export default function MerchantDashboardPage() {
   return (
     <div className="w-full min-h-screen bg-[#FFF8F5] text-[#231A11] flex antialiased selection:bg-[#DE3618] selection:text-white font-sans">
       {/* ASIDE SIDEBAR */}
-      <aside className="fixed left-0 top-0 h-full w-72 bg-[#FFF1E8] z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-[#F2DFD1] overflow-y-auto styled-scrollbar">
+      {/* MOBILE BACKDROP OVERLAY */}
+      {isMobileNavOpen && (
+        <div
+          onClick={() => setIsMobileNavOpen(false)}
+          className="fixed inset-0 bg-black/45 backdrop-blur-xs z-50 lg:hidden animate-fadeIn"
+        />
+      )}
+
+      {/* ASIDE SIDEBAR */}
+      <aside className={`fixed left-0 top-0 h-full w-72 bg-[#FFF1E8] z-50 flex flex-col justify-between shadow-2xl lg:shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-[#F2DFD1] overflow-y-auto styled-scrollbar transition-transform duration-300 ease-in-out ${
+        isMobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      }`}>
         <div className="flex flex-col">
           {/* Logo brand */}
           <div className="h-16 flex items-center px-6 gap-3 bg-[#FFF1E8] border-b border-[#F2DFD1]/70">
@@ -76,6 +87,7 @@ export default function MerchantDashboardPage() {
                   key={nav.id}
                   onClick={() => {
                     setActiveNav(nav.id);
+                    setIsMobileNavOpen(false);
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   type="button"
@@ -121,9 +133,18 @@ export default function MerchantDashboardPage() {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <div className="pl-72 flex-1 flex flex-col min-h-screen">
+      <div className="pl-0 lg:pl-72 flex-1 flex flex-col min-h-screen">
         {/* HEADER */}
-        <header className="fixed top-0 left-72 right-0 h-16 bg-[#FFF8F5]/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-8 border-b border-[#F2DFD1]">
+        <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-[#FFF8F5]/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 border-b border-[#F2DFD1]">
+          {/* Mobile hamburger menu */}
+          <button
+            type="button"
+            onClick={() => setIsMobileNavOpen(true)}
+            className="lg:hidden mr-2 p-2 rounded-xl text-[#231A11] hover:bg-[#FEEADC] transition-colors shrink-0"
+            title="Mở menu quản trị quán"
+          >
+            <span className="material-symbols-outlined text-2xl">menu</span>
+          </button>
           {/* Search bar */}
           <div className="flex items-center gap-4 flex-1 max-w-lg">
             <div className="relative w-full">
@@ -185,7 +206,7 @@ export default function MerchantDashboardPage() {
         </header>
 
         {/* BODY CONTENT CONTAINER */}
-        <main className="pt-20 px-6 md:px-8 pb-12 flex flex-col gap-8 max-w-[1600px] w-full mx-auto">
+        <main className="pt-20 px-3 sm:px-6 md:px-8 pb-12 flex flex-col gap-8 max-w-[1600px] w-full mx-auto">
           {activeNav === "dashboard" && (
             <MerchantOverviewTab currentPlace={currentPlace} isOpen={isOpen} setIsOpen={setIsOpen} />
           )}
