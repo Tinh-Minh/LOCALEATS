@@ -253,12 +253,12 @@ export default function FoodPin({ place, active, onClick, itineraryOrder, zoomLe
             active
               ? "bg-gradient-to-r from-[#E84A27] to-[#FF5436] text-white border-2 border-white shadow-[0_6px_20px_rgba(232,74,39,0.4)] ring-2 ring-orange-400"
               : isVip
-              ? "bg-gradient-to-r from-[#FFFDF2] to-[#FFF6DC] text-[#7A4500] border-[1.5px] border-amber-400 shadow-[0_4px_14px_rgba(245,158,11,0.22)] ring-1 ring-amber-300/40"
+              ? "bg-gradient-to-r from-[#FFF6DC] to-[#FFEEC4] text-[#7A4500] border-[1.5px] border-[#FFCA28] shadow-[0_4px_14px_rgba(245,158,11,0.22)] ring-1 ring-amber-300/50"
               : isTop1Hot
-              ? "bg-gradient-to-r from-[#FFF6F2] to-[#FFEBE0] text-[#A6270B] border-[1.5px] border-[#E84A27] shadow-[0_4px_14px_rgba(232,74,39,0.25)] ring-1 ring-orange-300/40"
+              ? "bg-gradient-to-r from-[#FFE4D4] to-[#FFD5C0] text-[#991E04] border-[1.5px] border-[#FF7A50] shadow-[0_4px_16px_rgba(232,74,39,0.25)] ring-1 ring-orange-300/60"
               : isInItinerary
-              ? "bg-white/98 text-[#0E4A56] border-[1.5px] border-cyan-500 shadow-[0_4px_12px_rgba(8,145,178,0.2)]"
-              : "bg-white/98 text-[#2B170E] border-[1.5px] border-[#E84A27]/40 shadow-[0_4px_12px_rgba(232,74,39,0.15)] hover:border-[#E84A27]"
+              ? "bg-[#E6F7FA] text-[#0E4A56] border-[1.5px] border-cyan-400 shadow-[0_4px_12px_rgba(8,145,178,0.2)]"
+              : "bg-gradient-to-r from-[#FFF0E6] to-[#FFE6D8] text-[#822409] border-[1.5px] border-[#FFBE9E] shadow-[0_4px_14px_rgba(232,74,39,0.18)] hover:border-[#E84A27]"
           }`}
         >
           {isInItinerary ? (
@@ -271,7 +271,7 @@ export default function FoodPin({ place, active, onClick, itineraryOrder, zoomLe
             </span>
           ) : isVip ? (
             <span
-              className={`material-symbols-outlined ${labelScale.iconSize} text-amber-500 shrink-0`}
+              className={`material-symbols-outlined ${labelScale.iconSize} text-amber-600 shrink-0`}
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               crown
@@ -281,7 +281,7 @@ export default function FoodPin({ place, active, onClick, itineraryOrder, zoomLe
               local_fire_department
             </span>
           ) : isVeryHighRated ? (
-            <span className={`material-symbols-outlined ${labelScale.iconSize} text-[#FF9F1C] shrink-0`}>
+            <span className={`material-symbols-outlined ${labelScale.iconSize} text-[#FF8A65] shrink-0`}>
               local_fire_department
             </span>
           ) : (
@@ -296,10 +296,10 @@ export default function FoodPin({ place, active, onClick, itineraryOrder, zoomLe
                 : isVip
                 ? "text-[#7A4500]"
                 : isTop1Hot
-                ? "text-[#A6270B]"
+                ? "text-[#991E04]"
                 : isInItinerary
                 ? "text-[#0E4A56]"
-                : "text-[#2B170E]"
+                : "text-[#822409]"
             }`}
           >
             {place.name}
@@ -311,10 +311,10 @@ export default function FoodPin({ place, active, onClick, itineraryOrder, zoomLe
                 active
                   ? "text-white/90"
                   : isVip
-                  ? "text-amber-700 font-semibold"
+                  ? "text-amber-800 font-semibold"
                   : isTop1Hot
-                  ? "text-[#E84A27] font-semibold"
-                  : "text-[#E84A27]/80 font-medium"
+                  ? "text-[#DE3618] font-bold"
+                  : "text-[#C23616] font-semibold"
               }`}
             >
               {isVip && place.discount ? place.discount : `(${formatReviewsCount(reviews)})`}
