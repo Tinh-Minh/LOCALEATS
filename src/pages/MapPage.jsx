@@ -64,10 +64,13 @@ export default function MapPage() {
       setMapSearchQuery(location.state.searchQuery);
     }
     if (location.state?.triggerDirections) {
-      const firstPlace = places[0];
-      if (firstPlace) {
-        setSelectedId(firstPlace.id);
-        startRoute({ lat: firstPlace.lat, lng: firstPlace.lng }, "bike");
+      if (selectedId) {
+        const target = (places || []).find((p) => p?.id === selectedId);
+        if (target) {
+          startRoute({ lat: target.lat, lng: target.lng }, "bike");
+        }
+      } else if (userLocation && mapRef.current) {
+        mapRef.current.flyToLocation(userLocation.lng, userLocation.lat, 16.5);
       }
       navigate(location.pathname, { replace: true, state: {} });
     }
@@ -163,7 +166,11 @@ export default function MapPage() {
     setItineraryStops([]);
     setSelectedId(null);
     if (mapRef.current) {
-      mapRef.current.resetToInitialView();
+      if (userLocation?.lng && userLocation?.lat) {
+        mapRef.current.flyToLocation(userLocation.lng, userLocation.lat, 16);
+      } else {
+        mapRef.current.resetToInitialView();
+      }
     }
   };
 
@@ -173,7 +180,11 @@ export default function MapPage() {
     setItineraryStops([]);
     setSelectedId(null);
     if (mapRef.current) {
-      mapRef.current.resetToInitialView();
+      if (userLocation?.lng && userLocation?.lat) {
+        mapRef.current.flyToLocation(userLocation.lng, userLocation.lat, 16);
+      } else {
+        mapRef.current.resetToInitialView();
+      }
     }
     navigate("/trip");
   };

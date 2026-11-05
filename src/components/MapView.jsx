@@ -134,9 +134,12 @@ const MapView = forwardRef(function MapView(
     },
     resetView: () => {
       if (mapRef.current) {
+        const target = (userLocation?.lng && userLocation?.lat)
+          ? [userLocation.lng, userLocation.lat]
+          : [106.7009, 10.7769];
         mapRef.current.flyTo({
-          center: [106.7005, 10.7745],
-          zoom: 15.5,
+          center: target,
+          zoom: 16,
           pitch: mapMode === "3d" ? 55 : 0,
           bearing: mapMode === "3d" ? 20 : 0,
           duration: 1000,
@@ -145,9 +148,12 @@ const MapView = forwardRef(function MapView(
     },
     resetToInitialView: () => {
       if (mapRef.current) {
+        const target = (userLocation?.lng && userLocation?.lat)
+          ? [userLocation.lng, userLocation.lat]
+          : [106.7009, 10.7769];
         mapRef.current.flyTo({
-          center: [106.7005, 10.7745],
-          zoom: 15.5,
+          center: target,
+          zoom: 16,
           pitch: mapMode === "3d" ? 55 : 0,
           bearing: mapMode === "3d" ? 20 : 0,
           duration: 1000,
@@ -220,6 +226,22 @@ const MapView = forwardRef(function MapView(
       console.warn("[MapView] fitBounds error:", err);
     }
   }, [routeData, userLocation, itineraryStops]);
+
+  // Khi mới truy cập: Tự động căn tâm về vị trí GPS của người dùng ngay khi có GPS (nếu chưa chọn quán hay có route)
+  const hasAutoCenteredGps = useRef(false);
+  useEffect(() => {
+    if (userLocation?.lng && userLocation?.lat && !hasAutoCenteredGps.current && !selectedId && !routeData && (!itineraryStops || itineraryStops.length === 0)) {
+      hasAutoCenteredGps.current = true;
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [userLocation.lng, userLocation.lat],
+          zoom: 16,
+          pitch: mapMode === "3d" ? 55 : 0,
+          duration: 1000,
+        });
+      }
+    }
+  }, [userLocation, selectedId, routeData, itineraryStops, mapMode]);
 
   // Bay đến quán được chọn
   useEffect(() => {
@@ -353,8 +375,8 @@ const MapView = forwardRef(function MapView(
           }
         }}
         initialViewState={{
-          longitude: 106.7005,
-          latitude: 10.7745,
+          longitude: userLocation?.lng || 106.7009,
+          latitude: userLocation?.lat || 10.7769,
           zoom: 15.5,
           pitch: mapMode === "3d" ? 55 : 0,
           bearing: mapMode === "3d" ? 20 : 0,

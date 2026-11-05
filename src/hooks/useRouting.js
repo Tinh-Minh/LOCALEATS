@@ -120,7 +120,16 @@ export default function useRouting() {
   const [isRouting, setIsRouting] = useState(false);
   const [routeError, setRouteError] = useState(null);
   const [transportMode, setTransportMode] = useState("bike");
-  const [userLocation, setUserLocation] = useState(null);
+  const [userLocation, setUserLocation] = useState(() => {
+    try {
+      const saved = localStorage.getItem("localeats_cached_gps");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.lat && parsed?.lng) return parsed;
+      }
+    } catch {}
+    return null;
+  });
   const [locationStatus, setLocationStatus] = useState(LOC_STATUS.PENDING);
 
   // Real GPS position tracking (vị trí GPS thực tế được trình duyệt cấp)
@@ -163,6 +172,9 @@ export default function useRouting() {
           const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           console.log("[Routing] ✅ Got real GPS:", loc, "accuracy:", pos.coords.accuracy, "m");
           realGpsRef.current = { loc, timestamp: Date.now() };
+          try {
+            localStorage.setItem("localeats_cached_gps", JSON.stringify(loc));
+          } catch {}
           setUserLocation(loc);
           setLocationStatus(LOC_STATUS.GPS_OK);
           gpsPending.current = null;
