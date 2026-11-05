@@ -249,16 +249,16 @@ export default function FoodPin({ place, active, onClick, itineraryOrder, zoomLe
         } ${active ? "z-50 scale-105" : "z-20 group-hover:z-50 group-hover:scale-105"}`}
       >
         <div
-          className={`${labelScale.pillPad} rounded-full shadow-xl backdrop-blur-md flex items-center gap-1.5 border whitespace-nowrap ${labelScale.maxWidth} transition-all duration-200 ${
+          className={`${labelScale.pillPad} rounded-full backdrop-blur-md flex items-center gap-1.5 whitespace-nowrap ${labelScale.maxWidth} transition-all duration-200 ${
             active
-              ? "bg-[#E84A27] text-white border-white/80 shadow-2xl ring-2 ring-orange-400"
+              ? "bg-gradient-to-r from-[#E84A27] to-[#FF5436] text-white border-2 border-white shadow-[0_6px_20px_rgba(232,74,39,0.4)] ring-2 ring-orange-400"
               : isVip
-              ? "bg-[#181B20]/95 text-white border-amber-400 shadow-xl shadow-black/30 ring-1 ring-amber-400/50"
+              ? "bg-gradient-to-r from-[#FFFDF2] to-[#FFF6DC] text-[#7A4500] border-[1.5px] border-amber-400 shadow-[0_4px_14px_rgba(245,158,11,0.22)] ring-1 ring-amber-300/40"
               : isTop1Hot
-              ? "bg-[#181B20]/95 text-white border-orange-500 shadow-xl shadow-black/30 ring-1 ring-orange-400/50"
+              ? "bg-gradient-to-r from-[#FFF6F2] to-[#FFEBE0] text-[#A6270B] border-[1.5px] border-[#E84A27] shadow-[0_4px_14px_rgba(232,74,39,0.25)] ring-1 ring-orange-300/40"
               : isInItinerary
-              ? "bg-[#181B20]/95 text-white border-cyan-400 shadow-xl shadow-black/30"
-              : "bg-[#181B20]/95 text-white border-white/20 shadow-xl shadow-black/25"
+              ? "bg-white/98 text-[#0E4A56] border-[1.5px] border-cyan-500 shadow-[0_4px_12px_rgba(8,145,178,0.2)]"
+              : "bg-white/98 text-[#2B170E] border-[1.5px] border-[#E84A27]/40 shadow-[0_4px_12px_rgba(232,74,39,0.15)] hover:border-[#E84A27]"
           }`}
         >
           {isInItinerary ? (
@@ -271,24 +271,36 @@ export default function FoodPin({ place, active, onClick, itineraryOrder, zoomLe
             </span>
           ) : isVip ? (
             <span
-              className={`material-symbols-outlined ${labelScale.iconSize} text-amber-400 shrink-0`}
+              className={`material-symbols-outlined ${labelScale.iconSize} text-amber-500 shrink-0`}
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               crown
             </span>
           ) : isTop1Hot ? (
-            <span className={`material-symbols-outlined ${labelScale.iconSize} text-[#FF5436] shrink-0`}>
+            <span className={`material-symbols-outlined ${labelScale.iconSize} text-[#E84A27] shrink-0`}>
               local_fire_department
             </span>
           ) : isVeryHighRated ? (
-            <span className={`material-symbols-outlined ${labelScale.iconSize} text-amber-400 shrink-0`}>
+            <span className={`material-symbols-outlined ${labelScale.iconSize} text-[#FF9F1C] shrink-0`}>
               local_fire_department
             </span>
-          ) : null}
+          ) : (
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E84A27] shrink-0" />
+          )}
 
           {/* Tên quán co giãn theo mức Zoom: zoom to thì hiện to, zoom nhỏ thì thu chữ lại */}
           <span
-            className={`${labelScale.nameSize} truncate tracking-normal font-sans text-white`}
+            className={`${labelScale.nameSize} truncate tracking-normal font-sans ${
+              active
+                ? "text-white"
+                : isVip
+                ? "text-[#7A4500]"
+                : isTop1Hot
+                ? "text-[#A6270B]"
+                : isInItinerary
+                ? "text-[#0E4A56]"
+                : "text-[#2B170E]"
+            }`}
           >
             {place.name}
           </span>
@@ -298,9 +310,11 @@ export default function FoodPin({ place, active, onClick, itineraryOrder, zoomLe
               className={`${labelScale.reviewSize} shrink-0 font-sans ${
                 active
                   ? "text-white/90"
-                  : isVip || isTop1Hot || isVeryHighRated
-                  ? "text-amber-300"
-                  : "text-gray-300"
+                  : isVip
+                  ? "text-amber-700 font-semibold"
+                  : isTop1Hot
+                  ? "text-[#E84A27] font-semibold"
+                  : "text-[#E84A27]/80 font-medium"
               }`}
             >
               {isVip && place.discount ? place.discount : `(${formatReviewsCount(reviews)})`}
