@@ -74,6 +74,41 @@ export default function DirectionsPanel({
   const [isSearchingDest, setIsSearchingDest] = useState(false);
   const [customDestName, setCustomDestName] = useState(null);
   const [showGoogleMap, setShowGoogleMap] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const handleSpeakRoute = () => {
+    if (!window.speechSynthesis) {
+      alert("Trình duyệt không hỗ trợ tổng hợp giọng nói Web Speech.");
+      return;
+    }
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    if (!routeData?.steps?.length) return;
+
+    // Chuẩn bị văn bản giọng đọc chỉ đường tiếng Việt
+    const textToSpeak = `Bắt đầu lộ trình tới ${placeName || "điểm đến"}. Khoảng cách ${routeData.distance}, thời gian dự kiến ${routeData.duration}. ` +
+      routeData.steps.slice(0, 5).map((s, idx) => `Bước ${idx + 1}: ${s.instruction}`).join(". ");
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = "vi-VN";
+    utterance.rate = 0.95;
+
+    // Tìm giọng tiếng Việt nếu có
+    const voices = window.speechSynthesis.getVoices();
+    const viVoice = voices.find((v) => v.lang.includes("vi"));
+    if (viVoice) utterance.voice = viVoice;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
 
   const gpsWarning = locationStatus && GPS_WARNINGS[locationStatus] ? GPS_WARNINGS[locationStatus] : null;
   const isUsingFallback = !!gpsWarning;
@@ -473,16 +508,31 @@ export default function DirectionsPanel({
             </div>
           </div>
 
-          {/* Footer: Open in Google Maps */}
-          <div className="px-3 pb-3">
+          {/* Footer: Voice Guidance & Open in Google Maps */}
+          <div className="px-3 pb-3 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleSpeakRoute}
+              className={`flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-[12px] font-bold transition-all shadow-sm cursor-pointer ${
+                isSpeaking
+                  ? "bg-rose-600 text-white animate-pulse"
+                  : "bg-orange-50 text-[#E84A27] border border-orange-200 hover:bg-orange-100"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {isSpeaking ? "volume_off" : "volume_up"}
+              </span>
+              <span>{isSpeaking ? "Dừng Đọc Giọng Nói" : "🎙️ Nghe Dẫn Đường Bằng Giọng Nói (Tiếng Việt)"}</span>
+            </button>
+
             <a
-              href={`https://www.google.com/maps/dir/?api=1&origin=${routeData.origin.lat},${routeData.origin.lng}&destination=${routeData.destination.lat},${routeData.destination.lng}&travelmode=${transportMode === "walk" ? "walking" : "driving"}`}
+              href={`https://www.google.com/maps/dir/?api=1&origin=${routeData.origin.lat},${routeData.origin.lng}&destination=${routeData.destination.lat},${routeData.destination.lng}&travelmode=${transportMode === "walk" ? "walking" : transportMode === "bike" ? "bicycling" : "driving"}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl border border-gray-200 text-[12px] font-semibold text-gray-600 hover:bg-gray-50 hover:border-[#E84A27] hover:text-[#E84A27] transition-all"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#1a73e8] text-white text-[12px] font-bold hover:bg-[#1557b0] transition-all shadow-md shadow-blue-500/20 active:scale-95"
             >
-              <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-              Mở trong Google Maps
+              <span className="material-symbols-outlined text-[17px]">record_voice_over</span>
+              <span>Mở Google Maps Dẫn Đường Giọng Nói (GPS)</span>
             </a>
           </div>
         </>

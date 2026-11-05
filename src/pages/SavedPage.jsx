@@ -21,7 +21,7 @@ export default function SavedPage() {
   };
 
   const handleOpenTrip = (trip) => {
-    // Chuyển tới bản đồ khởi hành chuyến đi đã lưu
+    // Chuyển tới bản đồ khởi hành chuyến đi đã lưu (bao gồm cả các quán ăn và điểm đến cuối cùng)
     if (!trip.stops || !trip.stops.length) return;
     const stopsData = trip.stops.map((place, idx) => ({
       id: place.id,
@@ -30,8 +30,10 @@ export default function SavedPage() {
       lat: place.lat,
       lng: place.lng,
       category: place.category,
-      order: idx + 1,
-      stopLetter: String.fromCharCode(66 + idx),
+      order: place.order || idx + 1,
+      stopLetter: place.isDestination ? "🏁" : (place.stopLetter || String.fromCharCode(66 + idx)),
+      isDestination: Boolean(place.isDestination),
+      isFoodStop: !place.isDestination,
     }));
 
     navigate("/", {

@@ -1,763 +1,556 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { places as initialPlaces } from "../data/places";
+
+// Import all Super Admin Tab components
+import AdminOverviewTab from "./admin/AdminOverviewTab";
+import AdminPlacesTab from "./admin/AdminPlacesTab";
+import AdminKycTab from "./admin/AdminKycTab";
+import AdminLiveMapTab from "./admin/AdminLiveMapTab";
+import AdminRevenueTab from "./admin/AdminRevenueTab";
+import AdminCampaignsTab from "./admin/AdminCampaignsTab";
+import AdminInvoicesTab from "./admin/AdminInvoicesTab";
+import AdminRolesTab from "./admin/AdminRolesTab";
+import AdminAuditLogTab from "./admin/AdminAuditLogTab";
+import AdminAiSommelierTab from "./admin/AdminAiSommelierTab";
+import AdminRoutingNodesTab from "./admin/AdminRoutingNodesTab";
+import AdminApiWebhooksTab from "./admin/AdminApiWebhooksTab";
+import AdminReviewSentinelTab from "./admin/AdminReviewSentinelTab";
+import AdminKolTab from "./admin/AdminKolTab";
+import AdminFraudTab from "./admin/AdminFraudTab";
+import AdminUsersTab from "./admin/AdminUsersTab";
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
-  const [places, setPlaces] = useState(initialPlaces);
-  const [activeTab, setActiveTab] = useState("overview"); // overview, places, reports, system
-  const [filterDistrict, setFilterDistrict] = useState("all");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedPlaceToEdit, setSelectedPlaceToEdit] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
 
-  // New Place Form State
+  // New Place State for Add Modal
   const [newPlace, setNewPlace] = useState({
     name: "",
     category: "Phở",
     specialty: "",
     address: "",
     district: "Quận 1",
-    price: "45.000đ - 80.000đ",
+    price: "45.000đ - 85.000đ",
     rating: 4.8,
     lat: 10.775,
-    lng: 106.700,
-    hot: false,
+    lng: 106.7,
+    hot: true,
     openNow: true,
     closeAt: "22:00",
   });
 
-  // Analytics Stats
-  const stats = useMemo(() => {
-    const total = places.length;
-    const hotCount = places.filter((p) => p.hot).length;
-    const openCount = places.filter((p) => p.openNow).length;
-    const avgRating = (
-      places.reduce((acc, p) => acc + (Number(p.rating) || 4.0), 0) / (total || 1)
-    ).toFixed(1);
-    const totalVisits = places.reduce((acc, p) => acc + (p.reviews || 0) * 12, 0);
-
-    return { total, hotCount, openCount, avgRating, totalVisits };
-  }, [places]);
-
-  // Filtered places table
-  const filteredPlaces = useMemo(() => {
-    return places.filter((p) => {
-      const matchDistrict = filterDistrict === "all" || p.district === filterDistrict;
-      const matchQuery =
-        !searchQuery ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.address.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchDistrict && matchQuery;
-    });
-  }, [places, filterDistrict, searchQuery]);
-
-  // Toggle Hot status
-  const handleToggleHot = (id) => {
-    setPlaces((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, hot: !p.hot } : p))
-    );
+  const showToast = (msg, type = "success") => {
+    setToastMessage({ msg, type });
+    setTimeout(() => setToastMessage(null), 3200);
   };
 
-  // Toggle Open status
-  const handleToggleOpen = (id) => {
-    setPlaces((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, openNow: !p.openNow } : p))
-    );
-  };
-
-  // Delete place
-  const handleDeletePlace = (id, name) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa quán "${name}" khỏi hệ thống LOCALEATS?`)) {
-      setPlaces((prev) => prev.filter((p) => p.id !== id));
-    }
-  };
-
-  // Handle Add New Place Submit
-  const handleAddSubmit = (e) => {
+  const handleAddPlaceSubmit = (e) => {
     e.preventDefault();
-    if (!newPlace.name.trim()) return;
-
-    const newId = Math.max(...places.map((p) => p.id), 0) + 1;
-    const created = {
-      ...newPlace,
-      id: newId,
-      reviews: 1,
-      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&q=80",
-      votes: 120,
-      trend: "+10%",
-      trendRank: places.length + 1,
-      distanceKm: 1.5,
-      bikeMin: 8,
-      carMin: 14,
-      walkMin: 20,
-    };
-
-    setPlaces([created, ...places]);
     setIsAddModalOpen(false);
+    showToast(`Đã thêm quán "${newPlace.name}" vào mạng lưới dữ liệu thành công!`);
     setNewPlace({
       name: "",
       category: "Phở",
       specialty: "",
       address: "",
       district: "Quận 1",
-      price: "45.000đ - 80.000đ",
+      price: "45.000đ - 85.000đ",
       rating: 4.8,
       lat: 10.775,
-      lng: 106.700,
-      hot: false,
+      lng: 106.7,
+      hot: true,
       openNow: true,
       closeAt: "22:00",
     });
   };
 
-  // Distinct districts
-  const districts = ["all", ...new Set(places.map((p) => p.district || "Quận 1"))];
+  const navSections = [
+    {
+      category: "TỔNG QUAN HỆ THỐNG",
+      items: [
+        {
+          id: "dashboard",
+          label: "Chỉ Huy Mạng Lưới Toàn Diện",
+          icon: "dashboard",
+          badge: "Master Live",
+          badgeClass: "bg-[#2C694E] text-white",
+        },
+      ],
+    },
+    {
+      category: "QUẢN TRỊ ĐỐI TÁC ẨM THỰC",
+      items: [
+        {
+          id: "places",
+          label: "Danh Sách Quán (12.840) & Menu",
+          icon: "restaurant",
+          badge: "12.8K",
+          badgeClass: "bg-[#FD9013] text-[#231A11]",
+        },
+        {
+          id: "queue",
+          label: "Phê Duyệt Mới (KYC & ATTP)",
+          icon: "verified_user",
+          badge: "24 Chờ",
+          badgeClass: "bg-[#DE3618] text-white",
+        },
+        {
+          id: "fraud",
+          label: "Báo Cáo Gian Lận & Khóa Quán",
+          icon: "gavel",
+          badge: "6 Cảnh Báo",
+          badgeClass: "bg-red-100 text-red-800",
+        },
+      ],
+    },
+    {
+      category: "BẢN ĐỒ & MẠNG LƯỚI GPS",
+      items: [
+        {
+          id: "regions",
+          label: "Live Fleet & Heatmap GPS",
+          icon: "map",
+          badge: "Radar",
+          badgeClass: "bg-[#2C694E] text-white",
+        },
+        {
+          id: "routing",
+          label: "Cụm Node Định Tuyến (16ms)",
+          icon: "hub",
+          badge: "16ms",
+          badgeClass: "bg-emerald-100 text-emerald-800",
+        },
+      ],
+    },
+    {
+      category: "TÀI CHÍNH & QUẢNG CÁO",
+      items: [
+        {
+          id: "revenue",
+          label: "Doanh Thu VIP & Gói Ads",
+          icon: "payments",
+          badge: "ARR 2.45B",
+          badgeClass: "bg-[#FD9013]/20 text-[#8F4E00]",
+        },
+        {
+          id: "campaigns",
+          label: "Chiến Dịch QC & Giao Dịch",
+          icon: "campaign",
+          badge: "148 Live",
+          badgeClass: "bg-blue-100 text-blue-900",
+        },
+        {
+          id: "invoices",
+          label: "Đối Soát & Hóa Đơn VAT",
+          icon: "receipt_long",
+          badge: "e-VAT",
+          badgeClass: "bg-[#B1F0CE] text-[#002114]",
+        },
+      ],
+    },
+    {
+      category: "CỘNG ĐỒNG & REVIEW SENTINEL",
+      items: [
+        {
+          id: "users",
+          label: "Thực Khách & Cộng Đồng",
+          icon: "group",
+          badge: "482K",
+          badgeClass: "bg-purple-100 text-purple-800",
+        },
+        {
+          id: "kol",
+          label: "Phân Cấp KOL & Foodie Reviewer",
+          icon: "stars",
+          badge: "VIP KOL",
+          badgeClass: "bg-amber-100 text-amber-800",
+        },
+        {
+          id: "reviews",
+          label: "Kiểm Duyệt Review AI Sentinel",
+          icon: "shield",
+          badge: "AI Bot",
+          badgeClass: "bg-indigo-100 text-indigo-800",
+        },
+      ],
+    },
+    {
+      category: "HẠ TẦNG & AI ENGINE",
+      items: [
+        {
+          id: "ai-sommelier",
+          label: "Mô Hình AI Sommelier",
+          icon: "psychology",
+          badge: "Model V4",
+          badgeClass: "bg-teal-100 text-teal-800",
+        },
+        {
+          id: "api-webhooks",
+          label: "API Partner & Webhooks",
+          icon: "api",
+          badge: "REST",
+          badgeClass: "bg-cyan-100 text-cyan-800",
+        },
+        {
+          id: "roles",
+          label: "Phân Quyền Vai Trò (RBAC)",
+          icon: "badge",
+          badge: "Security",
+          badgeClass: "bg-slate-200 text-slate-800",
+        },
+        {
+          id: "audit",
+          label: "Audit Log & An Ninh Bảo Mật",
+          icon: "policy",
+          badge: "2FA Live",
+          badgeClass: "bg-rose-100 text-rose-800",
+        },
+      ],
+    },
+  ];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#F8F9FA] overflow-y-auto styled-scrollbar">
-      {/* Top Banner / Breadcrumb */}
-      <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-[#1F2937] text-white px-4 sm:px-8 py-5 border-b border-gray-700 shadow-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-red-600/30 text-red-400 border border-red-500/40 text-[10px] font-black tracking-widest uppercase">
-                Admin Center
-              </span>
-              <span className="text-gray-400 text-xs">• Toàn quyền hệ thống</span>
+    <div className="w-full min-h-screen bg-[#FFF8F5] text-[#231A11] flex antialiased selection:bg-[#DE3618] selection:text-white font-sans">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#231A11] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-[#FD9013]/30 animate-bounce">
+          <span className="material-symbols-outlined text-[#FD9013]">
+            {toastMessage.type === "error" ? "error" : "check_circle"}
+          </span>
+          <span className="text-xs font-semibold">{toastMessage.msg}</span>
+        </div>
+      )}
+
+      {/* ASIDE SIDEBAR */}
+      <aside className="fixed left-0 top-0 h-full w-72 bg-[#FFF1E8] z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-[#F2DFD1] overflow-y-auto styled-scrollbar">
+        <div className="flex flex-col">
+          {/* Logo brand */}
+          <div className="h-16 flex items-center px-6 gap-3 bg-[#FFF1E8] border-b border-[#F2DFD1]/70 sticky top-0 z-20 backdrop-blur-md">
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="w-9 h-9 rounded-xl bg-[#231A11] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-xl text-[#FD9013]">
+                  admin_panel_settings
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-extrabold text-lg text-[#231A11] tracking-tight leading-none">
+                  LOCALEATS
+                </span>
+                <span className="text-[11px] text-[#DE3618] font-bold mt-0.5">
+                  Super Admin Root
+                </span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Master Node Status Badge */}
+          <div className="px-5 py-4">
+            <div className="bg-[#FEEADC] rounded-2xl p-3 flex items-center justify-between border border-[#F2DFD1]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#2C694E] animate-ping shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-[#231A11] truncate">Cluster Master VN-East</span>
+                  <span className="text-[11px] text-[#5C403A] truncate">Uptime 99.99% • Latency 12ms</span>
+                </div>
+              </div>
+              <span className="material-symbols-outlined text-[#2C694E] text-base">cloud_done</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black mt-1 tracking-tight flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#E84A27]">admin_panel_settings</span>
-              Hệ Thống Quản Trị Trung Tâm LOCALEATS
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-300 mt-0.5">
-              Kiểm duyệt quán ăn, theo dõi lưu lượng truy cập thực tế và quản lý nội dung bản đồ toàn thành phố.
+          </div>
+
+          {/* Categorized Navigation Links */}
+          <div className="px-3 pb-6 flex flex-col gap-4">
+            {navSections.map((sec, secIdx) => (
+              <div key={secIdx} className="flex flex-col gap-1">
+                <span className="text-[10px] font-extrabold tracking-wider text-[#5C403A]/70 uppercase px-3 py-1">
+                  {sec.category}
+                </span>
+                {sec.items.map((nav) => {
+                  const isActive = activeTab === nav.id;
+                  return (
+                    <button
+                      key={nav.id}
+                      onClick={() => {
+                        setActiveTab(nav.id);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      type="button"
+                      className={`flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-bold transition-all text-left ${
+                        isActive
+                          ? "bg-[#231A11] text-white shadow-md"
+                          : "text-[#5C403A] hover:bg-[#F8E5D6] hover:text-[#231A11]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className={`material-symbols-outlined text-lg shrink-0 ${
+                            isActive ? "text-[#FD9013]" : "text-[#5C403A]"
+                          }`}
+                        >
+                          {nav.icon}
+                        </span>
+                        <span className="truncate max-w-[130px]">{nav.label}</span>
+                      </div>
+                      {nav.badge && (
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${
+                            nav.badgeClass || (isActive ? "bg-[#FD9013] text-[#231A11]" : "bg-white/80 text-[#5C403A]")
+                          }`}
+                        >
+                          {nav.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom Support Widget & Quick Links */}
+        <div className="p-4 flex flex-col gap-2 border-t border-[#F2DFD1]/50 bg-[#FFF1E8]">
+          <div className="bg-[#FEEADC] p-3 rounded-2xl flex flex-col gap-1.5 border border-[#F2DFD1]">
+            <div className="flex items-center gap-2 text-[#8F4E00]">
+              <span className="material-symbols-outlined text-base">security</span>
+              <span className="text-xs font-bold">Admin Security Console</span>
+            </div>
+            <p className="text-[11px] text-[#5C403A] leading-tight">
+              Đã xác thực 2FA sinh trắc học phiên làm việc cấp quyền Root Admin
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-[#E84A27] hover:bg-[#d43d1c] text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-lg shadow-[#E84A27]/30 transition-all hover:scale-105 active:scale-95"
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              to="/merchant"
+              className="flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-[11px] font-bold text-[#8F4E00] bg-[#FFF8F5] border border-[#F2DFD1] hover:bg-[#FEEADC] transition-colors text-center"
             >
-              <span className="material-symbols-outlined text-base">add_business</span>
-              <span className="hidden xs:inline">Thêm Quán Ăn Mới</span>
-            </button>
-            <button
-              onClick={() => {
-                sessionStorage.removeItem("localeats_admin_auth");
-                navigate("/portal");
-              }}
-              className="bg-gray-800 hover:bg-red-950/80 hover:border-red-700/60 text-gray-300 hover:text-red-300 px-3 py-2 rounded-xl border border-gray-700 text-xs font-bold flex items-center gap-1 transition-all"
-              title="Đăng xuất khỏi hệ thống quản trị"
-            >
-              <span className="material-symbols-outlined text-base">logout</span>
-              <span className="hidden sm:inline">Đăng xuất</span>
-            </button>
+              <span className="material-symbols-outlined text-sm">storefront</span>
+              Portal Quán
+            </Link>
             <Link
               to="/"
-              className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-xl border border-gray-700 text-xs font-bold flex items-center gap-1 transition-all"
-              title="Trở về bản đồ người dùng"
+              className="flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-[11px] font-bold text-[#5C403A] bg-[#FFF8F5] border border-[#F2DFD1] hover:bg-[#F8E5D6] hover:text-[#DE3618] transition-colors text-center"
             >
-              <span className="material-symbols-outlined text-base">map</span>
-              <span className="hidden sm:inline">Về App</span>
+              <span className="material-symbols-outlined text-sm">map</span>
+              Bản Đồ Khách
             </Link>
           </div>
         </div>
+      </aside>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 mt-6 overflow-x-auto no-scrollbar pt-2 border-t border-gray-800">
-          {[
-            { id: "overview", label: "Tổng quan & Thống kê", icon: "dashboard" },
-            { id: "places", label: `Quản lý Quán ăn (${places.length})`, icon: "restaurant" },
-            { id: "reports", label: "Báo cáo vi phạm & Đánh giá", icon: "flag" },
-            { id: "system", label: "Cấu hình Bản đồ & GPS", icon: "settings" },
-          ].map((tab) => (
+      {/* MAIN CONTENT AREA */}
+      <div className="pl-72 flex-1 flex flex-col min-h-screen">
+        {/* HEADER */}
+        <header className="fixed top-0 left-72 right-0 h-16 bg-[#FFF8F5]/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-8 border-b border-[#F2DFD1]">
+          {/* Search bar */}
+          <div className="flex items-center gap-4 flex-1 max-w-lg">
+            <div className="relative w-full">
+              <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#DE3618] text-xl">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm kiếm quán ăn, chủ sở hữu, địa chỉ GPS, mã GPKD, log bảo mật..."
+                className="w-full h-10 pl-11 pr-4 rounded-full bg-white text-[#231A11] placeholder-[#906F69] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#DE3618]/25 border border-[#F2DFD1] transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Right Status Controls */}
+          <div className="flex items-center gap-3">
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#DE3618] hover:bg-[#B91D00] text-white text-xs font-bold shadow-md shadow-[#DE3618]/20 transition-all"
             >
-              <span className="material-symbols-outlined text-base">{tab.icon}</span>
-              {tab.label}
+              <span className="material-symbols-outlined text-base">add_business</span>
+              <span>+ Thêm Quán Mới</span>
             </button>
-          ))}
-        </div>
+
+            <div className="hidden sm:flex items-center gap-2 bg-[#FEEADC] px-3.5 py-1.5 rounded-full border border-[#F2DFD1]">
+              <span className="w-2 h-2 rounded-full bg-[#2C694E] animate-pulse" />
+              <span className="text-xs text-[#231A11] font-bold">Node V4.8 Live</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => showToast("Đã rà soát an ninh: Toàn bộ 16 phân hệ Super Admin hoạt động an toàn!", "success")}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-[#5C403A] hover:bg-[#FEEADC] hover:text-[#231A11] transition-all relative"
+              aria-label="Thông báo an ninh"
+            >
+              <span className="material-symbols-outlined text-xl">notifications</span>
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#DE3618]" />
+            </button>
+
+            <div className="h-6 w-px bg-[#F2DFD1]" />
+
+            <div className="flex items-center gap-3 pl-1">
+              <div className="w-9 h-9 rounded-full bg-[#231A11] text-[#FD9013] flex items-center justify-center font-bold text-sm shadow">
+                SA
+              </div>
+              <div className="hidden md:flex flex-col">
+                <span className="text-xs font-bold text-[#231A11] leading-none">Super Admin Master</span>
+                <span className="text-[11px] text-[#5C403A] mt-0.5">Toàn quyền điều hành Root</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* DYNAMIC TAB BODY */}
+        <main className="flex-1 w-full bg-[#FFF8F5]">
+          {activeTab === "dashboard" && (
+            <div className="pt-20 px-4 md:px-8 pb-12 max-w-[1720px] mx-auto w-full">
+              <AdminOverviewTab onNavigateTab={setActiveTab} />
+            </div>
+          )}
+          {activeTab === "places" && <AdminPlacesTab onNavigateTab={setActiveTab} />}
+          {activeTab === "queue" && <AdminKycTab onNavigateTab={setActiveTab} />}
+          {activeTab === "fraud" && <AdminFraudTab onNavigateTab={setActiveTab} />}
+          {activeTab === "regions" && <AdminLiveMapTab onNavigateTab={setActiveTab} />}
+          {activeTab === "routing" && <AdminRoutingNodesTab onNavigateTab={setActiveTab} />}
+          {activeTab === "revenue" && <AdminRevenueTab onNavigateTab={setActiveTab} />}
+          {activeTab === "campaigns" && <AdminCampaignsTab onNavigateTab={setActiveTab} />}
+          {activeTab === "invoices" && <AdminInvoicesTab onNavigateTab={setActiveTab} />}
+          {activeTab === "users" && <AdminUsersTab onNavigateTab={setActiveTab} />}
+          {activeTab === "kol" && <AdminKolTab onNavigateTab={setActiveTab} />}
+          {activeTab === "reviews" && <AdminReviewSentinelTab onNavigateTab={setActiveTab} />}
+          {activeTab === "ai-sommelier" && <AdminAiSommelierTab onNavigateTab={setActiveTab} />}
+          {activeTab === "api-webhooks" && <AdminApiWebhooksTab onNavigateTab={setActiveTab} />}
+          {activeTab === "roles" && <AdminRolesTab onNavigateTab={setActiveTab} />}
+          {activeTab === "audit" && <AdminAuditLogTab onNavigateTab={setActiveTab} />}
+        </main>
       </div>
 
-      {/* Main Content Area */}
-      <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto flex-1 flex flex-col gap-6">
-        {/* KPI Cards Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-          <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between text-gray-500 mb-2">
-              <span className="text-xs font-bold">Tổng địa điểm</span>
-              <span className="p-1.5 rounded-lg bg-orange-50 text-[#E84A27] material-symbols-outlined text-base">
-                storefront
-              </span>
-            </div>
-            <div className="text-2xl font-black text-gray-900">{stats.total}</div>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-xs">trending_up</span> +3 quán tuần này
-            </span>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between text-gray-500 mb-2">
-              <span className="text-xs font-bold">Quán Đang HOT</span>
-              <span className="p-1.5 rounded-lg bg-red-50 text-red-600 material-symbols-outlined text-base">
-                local_fire_department
-              </span>
-            </div>
-            <div className="text-2xl font-black text-gray-900">{stats.hotCount}</div>
-            <span className="text-[11px] text-red-500 font-semibold mt-1">Đang gắn ngọn lửa rực sáng</span>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between text-gray-500 mb-2">
-              <span className="text-xs font-bold">Đang mở cửa</span>
-              <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 material-symbols-outlined text-base">
-                schedule
-              </span>
-            </div>
-            <div className="text-2xl font-black text-emerald-600">{stats.openCount}</div>
-            <span className="text-[11px] text-gray-500 mt-1">Sẵn sàng phục vụ khách</span>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between text-gray-500 mb-2">
-              <span className="text-xs font-bold">Điểm TB Hệ thống</span>
-              <span className="p-1.5 rounded-lg bg-amber-50 text-amber-500 material-symbols-outlined text-base">
-                star
-              </span>
-            </div>
-            <div className="text-2xl font-black text-gray-900">{stats.avgRating} ★</div>
-            <span className="text-[11px] text-amber-600 font-semibold mt-1">Chất lượng cao</span>
-          </div>
-
-          <div className="col-span-2 lg:col-span-1 bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between text-gray-500 mb-2">
-              <span className="text-xs font-bold">Lượt tìm & dẫn đường</span>
-              <span className="p-1.5 rounded-lg bg-blue-50 text-blue-600 material-symbols-outlined text-base">
-                navigation
-              </span>
-            </div>
-            <div className="text-2xl font-black text-blue-600">{stats.totalVisits.toLocaleString()}</div>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-1">+18.4% so với tháng trước</span>
-          </div>
-        </div>
-
-        {/* Tab 1: Overview */}
-        {activeTab === "overview" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Realtime Alert & Feed */}
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200/80 p-5 shadow-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-                  <h3 className="font-bold text-gray-900 text-sm sm:text-base">
-                    Nhật ký điều phối & Tương tác người dùng trực tiếp
-                  </h3>
-                </div>
-                <span className="text-[11px] text-gray-400 font-medium">Cập nhật 5 giây trước</span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-orange-50/70 border border-orange-200/60 flex items-start gap-3">
-                  <span className="p-2 rounded-lg bg-[#E84A27] text-white material-symbols-outlined text-sm">
-                    local_fire_department
-                  </span>
-                  <div className="flex-1 text-xs">
-                    <p className="font-bold text-gray-900">
-                      Cụm ẩm thực Quận 1 & Quận 4 đang đạt mức lưu lượng dẫn đường kỷ lục
-                    </p>
-                    <p className="text-gray-600 mt-0.5">
-                      Ốc Oanh và Bánh Mì Huỳnh Hoa ghi nhận hơn 1.200 lượt tìm đường trong 2 giờ qua.
-                    </p>
-                  </div>
-                  <span className="text-[10px] text-gray-400 font-medium">Vừa xong</span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/60 flex items-start gap-3">
-                  <span className="p-2 rounded-lg bg-blue-600 text-white material-symbols-outlined text-sm">
-                    rate_review
-                  </span>
-                  <div className="flex-1 text-xs">
-                    <p className="font-bold text-gray-900">18 đánh giá mới đã được gửi lên hệ thống kiểm duyệt</p>
-                    <p className="text-gray-600 mt-0.5">
-                      Hình ảnh món ăn và hóa đơn xác thực vị trí GPS đạt tỷ lệ hợp lệ 94%.
-                    </p>
-                  </div>
-                  <span className="text-[10px] text-gray-400 font-medium">4 phút trước</span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex items-start gap-3">
-                  <span className="p-2 rounded-lg bg-emerald-600 text-white material-symbols-outlined text-sm">
-                    verified
-                  </span>
-                  <div className="flex-1 text-xs">
-                    <p className="font-bold text-gray-900">Chủ quán "Phở Thìn Lò Đúc" đã kích hoạt gói tài trợ VIP</p>
-                    <p className="text-gray-600 mt-0.5">
-                      Gia hạn hiển thị ưu đãi tặng nước ngọt đến hết ngày 30/11/2026.
-                    </p>
-                  </div>
-                  <span className="text-[10px] text-gray-400 font-medium">15 phút trước</span>
-                </div>
-              </div>
-
-              {/* Quick Admin Actions */}
-              <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
-                <button
-                  onClick={() => setActiveTab("places")}
-                  className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-all"
-                >
-                  Xem danh sách {places.length} quán →
-                </button>
-                <button
-                  onClick={() => alert("Đã gửi thông báo cập nhật bản đồ tới toàn bộ người dùng đang online.")}
-                  className="px-3 py-1.5 rounded-lg bg-orange-100 hover:bg-orange-200 text-[#E84A27] text-xs font-bold transition-all"
-                >
-                  Phát thông báo hệ thống (Broadcast)
-                </button>
-              </div>
-            </div>
-
-            {/* Quick System Monitor */}
-            <div className="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-sm flex flex-col gap-4">
-              <h3 className="font-bold text-gray-900 text-sm sm:text-base flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#E84A27]">dns</span>
-                Tình trạng Hạ tầng Bản đồ
-              </h3>
-
-              <div className="space-y-3.5 text-xs">
-                <div>
-                  <div className="flex justify-between text-gray-600 mb-1">
-                    <span>Tile Server (OpenFreeMap)</span>
-                    <span className="text-emerald-600 font-bold">100% Hoạt động</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div className="bg-emerald-500 h-2 rounded-full w-full"></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-gray-600 mb-1">
-                    <span>OSRM Routing Engine</span>
-                    <span className="text-emerald-600 font-bold">99.8% Tốc độ cao</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div className="bg-emerald-500 h-2 rounded-full w-[99.8%]"></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-gray-600 mb-1">
-                    <span>Độ trễ GPS Định vị Browser</span>
-                    <span className="text-gray-900 font-bold">~42ms</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full w-[92%]"></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-gray-600 mb-1">
-                    <span>Bộ nhớ đệm MapLibre Worker</span>
-                    <span className="text-gray-900 font-bold">508 KB (Tối ưu)</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div className="bg-orange-500 h-2 rounded-full w-[25%]"></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-auto p-3 rounded-xl bg-gray-50 border border-gray-200 text-[11px] text-gray-600">
-                💡 <span className="font-bold">Mẹo Admin:</span> Để tối ưu trải nghiệm người dùng, các quán có đánh giá từ 4.8★ trở lên sẽ tự động được ưu tiên kích hoạt ngọn lửa lửa bùng cháy trên bản đồ.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 2: Manage Places */}
-        {activeTab === "places" && (
-          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden flex flex-col">
-            {/* Search & Filter Toolbar */}
-            <div className="p-4 border-b border-gray-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-64">
-                  <span className="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-sm">
-                    search
-                  </span>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Tìm tên quán, món ăn..."
-                    className="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#E84A27]"
-                  />
-                </div>
-
-                <select
-                  value={filterDistrict}
-                  onChange={(e) => setFilterDistrict(e.target.value)}
-                  className="bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:border-[#E84A27]"
-                >
-                  {districts.map((d) => (
-                    <option key={d} value={d}>
-                      {d === "all" ? "Tất cả quận/huyện" : d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-gray-500 w-full sm:w-auto justify-end">
-                <span>Hiển thị: <strong className="text-gray-900">{filteredPlaces.length}</strong> quán</span>
-              </div>
-            </div>
-
-            {/* Places Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-gray-100/70 border-b border-gray-200 text-gray-600 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-3 px-4">Quán ăn</th>
-                    <th className="py-3 px-3">Danh mục</th>
-                    <th className="py-3 px-3">Khu vực</th>
-                    <th className="py-3 px-3 text-center">Đánh giá</th>
-                    <th className="py-3 px-3 text-center">Ngọn lửa HOT</th>
-                    <th className="py-3 px-3 text-center">Trạng thái</th>
-                    <th className="py-3 px-4 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredPlaces.map((p) => (
-                    <tr key={p.id} className="hover:bg-orange-50/40 transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <img
-                            src={p.image}
-                            alt={p.name}
-                            className="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-200"
-                          />
-                          <div>
-                            <div className="font-bold text-gray-900 text-xs sm:text-sm">{p.name}</div>
-                            <div className="text-[11px] text-gray-500 truncate max-w-[200px] sm:max-w-xs">
-                              {p.specialty}
-                            </div>
-                            <div className="text-[10px] text-gray-400">{p.price}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-3 px-3">
-                        <span className="px-2.5 py-1 rounded-full bg-orange-100 text-[#E84A27] font-bold text-[10px]">
-                          {p.category}
-                        </span>
-                      </td>
-
-                      <td className="py-3 px-3 font-medium text-gray-700">
-                        {p.district || "Quận 1"}
-                      </td>
-
-                      <td className="py-3 px-3 text-center">
-                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 font-black border border-amber-200/80">
-                          {p.rating} ★
-                        </span>
-                      </td>
-
-                      <td className="py-3 px-3 text-center">
-                        <button
-                          onClick={() => handleToggleHot(p.id)}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1 mx-auto ${
-                            p.hot
-                              ? "bg-red-500 text-white shadow-sm shadow-red-500/30"
-                              : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-[13px]">local_fire_department</span>
-                          {p.hot ? "BÙNG NỔ" : "Bình thường"}
-                        </button>
-                      </td>
-
-                      <td className="py-3 px-3 text-center">
-                        <button
-                          onClick={() => handleToggleOpen(p.id)}
-                          className={`px-2 py-1 rounded-full text-[10px] font-bold transition-all ${
-                            p.openNow
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-gray-200 text-gray-600"
-                          }`}
-                        >
-                          {p.openNow ? "Đang mở cửa" : "Đã đóng cửa"}
-                        </button>
-                      </td>
-
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => handleDeletePlace(p.id, p.name)}
-                            title="Xóa quán"
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-base">delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Reports */}
-        {activeTab === "reports" && (
-          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-sm flex flex-col gap-4">
-            <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-              <span className="material-symbols-outlined text-amber-500">flag</span>
-              Hàng đợi Báo cáo vi phạm & Khiếu nại từ thực khách
-            </h3>
-            <p className="text-xs text-gray-500">
-              Kiểm tra các phản ánh về giá cả không đúng menu, quán đã đổi vị trí hoặc chất lượng phục vụ.
-            </p>
-
-            <div className="divide-y divide-gray-100 mt-2">
-              <div className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 font-bold text-[10px]">
-                      Báo sai giờ đóng cửa
-                    </span>
-                    <strong className="text-gray-900 text-xs">Quán Bún Bò Huế Cô Ri</strong>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Người dùng @nguyen_minh phản ánh quán đóng cửa lúc 20:30 thay vì 21:00 như niêm yết.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => alert("Đã cập nhật giờ hoạt động chính xác!")}
-                    className="px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700"
-                  >
-                    Duyệt & Đổi giờ
-                  </button>
-                  <button className="px-3 py-1.5 bg-gray-100 text-gray-600 font-medium text-xs rounded-lg hover:bg-gray-200">
-                    Bỏ qua
-                  </button>
-                </div>
-              </div>
-
-              <div className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-bold text-[10px]">
-                      Đề xuất cập nhật Menu
-                    </span>
-                    <strong className="text-gray-900 text-xs">Ốc Oanh - Vĩnh Khánh</strong>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Chủ quán tải lên thực đơn mới: Thêm món Càng ghẹ rang muối tuyết.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => alert("Đã duyệt món mới vào hồ sơ quán!")}
-                    className="px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700"
-                  >
-                    Phê duyệt món
-                  </button>
-                  <button className="px-3 py-1.5 bg-gray-100 text-gray-600 font-medium text-xs rounded-lg hover:bg-gray-200">
-                    Xem ảnh menu
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 4: System Config */}
-        {activeTab === "system" && (
-          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-sm flex flex-col gap-4">
-            <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#E84A27]">tune</span>
-              Cấu hình Bản đồ & Hệ thống GPS LOCALEATS
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50">
-                <h4 className="font-bold text-xs text-gray-900 mb-1">Độ nhạy ngọn lửa HOT trên Map</h4>
-                <p className="text-[11px] text-gray-500 mb-3">
-                  Tự động kích hoạt hiệu ứng lửa bùng cháy khi đạt ngưỡng đánh giá hoặc tương tác cao.
-                </p>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-[#E84A27]">≥ 4.8★</span>
-                  <input type="range" min="4.0" max="5.0" step="0.1" defaultValue="4.8" className="flex-1 accent-[#E84A27]" />
-                  <span className="text-xs text-gray-600">5.0★</span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50">
-                <h4 className="font-bold text-xs text-gray-900 mb-1">Thời gian lưu bộ nhớ GPS (Cache TTL)</h4>
-                <p className="text-[11px] text-gray-500 mb-3">
-                  Thời gian ghi nhớ toạ độ GPS của thiết bị để tránh gửi request định vị lặp lại liên tục.
-                </p>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-blue-600">60 Giây</span>
-                  <input type="range" min="15" max="180" step="15" defaultValue="60" className="flex-1 accent-blue-600" />
-                  <span className="text-xs text-gray-600">180s</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Modal: Thêm Quán Ăn Mới */}
+      {/* Modal Thêm Quán Mới */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200 animate-scaleUp">
-            <div className="p-5 bg-gradient-to-r from-gray-900 to-gray-800 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#E84A27]">add_location_alt</span>
-                <h3 className="font-bold text-base">Thêm Quán Ăn Vào Hệ Thống Bản Đồ</h3>
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-[#F2DFD1] relative">
+            <button
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute top-5 right-5 text-[#5C403A] hover:text-[#231A11]"
+            >
+              <span className="material-symbols-outlined text-2xl">close</span>
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFDAD3] flex items-center justify-center text-[#DE3618]">
+                <span className="material-symbols-outlined text-2xl">add_business</span>
               </div>
-              <button
-                onClick={() => setIsAddModalOpen(false)}
-                className="w-8 h-8 rounded-full hover:bg-gray-700 flex items-center justify-center"
-              >
-                <span className="material-symbols-outlined text-sm">close</span>
-              </button>
+              <div>
+                <h3 className="text-lg font-bold text-[#231A11]">Thêm Quán Ăn Mới Vào Bản Đồ</h3>
+                <p className="text-xs text-[#5C403A]">Ghim tọa độ và phát hành trực tiếp lên mạng lưới LocalEats</p>
+              </div>
             </div>
 
-            <form onSubmit={handleAddSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+            <form onSubmit={handleAddPlaceSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Tên quán ăn (*)</label>
+                <label className="block font-bold text-[#231A11] mb-1">Tên quán ăn</label>
                 <input
                   type="text"
                   required
                   value={newPlace.name}
                   onChange={(e) => setNewPlace({ ...newPlace, name: e.target.value })}
-                  placeholder="Ví dụ: Bún Thịt Nướng Bà Ba"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-[#E84A27]"
+                  placeholder="Ví dụ: Bún Bò Huế Đông Ba"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FFF1E8] border border-[#F2DFD1] focus:outline-none focus:border-[#DE3618]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Danh mục món</label>
+                  <label className="block font-bold text-[#231A11] mb-1">Danh mục món</label>
                   <select
                     value={newPlace.category}
                     onChange={(e) => setNewPlace({ ...newPlace, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-[#E84A27]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FFF1E8] border border-[#F2DFD1] focus:outline-none focus:border-[#DE3618]"
                   >
-                    <option value="Phở">Phở</option>
-                    <option value="Bánh Mì">Bánh Mì</option>
-                    <option value="Hải Sản">Hải Sản / Ốc</option>
-                    <option value="Cơm Tấm">Cơm Tấm</option>
-                    <option value="Bún Bò">Bún Bò</option>
-                    <option value="Bún Đậu">Bún Đậu</option>
-                    <option value="Lẩu">Lẩu</option>
-                    <option value="Nướng">Nướng / BBQ</option>
-                    <option value="Trà Sữa">Trà Sữa / Đồ Uống</option>
+                    <option>Phở</option>
+                    <option>Bánh Mì</option>
+                    <option>Hải Sản</option>
+                    <option>Cơm Tấm</option>
+                    <option>Bún Bò</option>
+                    <option>Lẩu &amp; Nướng</option>
+                    <option>Tráng Miệng &amp; Chè</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Quận / Huyện</label>
-                  <select
+                  <label className="block font-bold text-[#231A11] mb-1">Khu vực / Quận</label>
+                  <input
+                    type="text"
+                    required
                     value={newPlace.district}
                     onChange={(e) => setNewPlace({ ...newPlace, district: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-[#E84A27]"
-                  >
-                    <option value="Quận 1">Quận 1</option>
-                    <option value="Quận 3">Quận 3</option>
-                    <option value="Quận 4">Quận 4</option>
-                    <option value="Quận 5">Quận 5</option>
-                    <option value="Quận 7">Quận 7</option>
-                    <option value="Bình Thạnh">Bình Thạnh</option>
-                    <option value="Thủ Đức">TP. Thủ Đức</option>
-                  </select>
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FFF1E8] border border-[#F2DFD1] focus:outline-none focus:border-[#DE3618]"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Địa chỉ chi tiết</label>
+                <label className="block font-bold text-[#231A11] mb-1">Địa chỉ chi tiết</label>
                 <input
                   type="text"
                   required
                   value={newPlace.address}
                   onChange={(e) => setNewPlace({ ...newPlace, address: e.target.value })}
-                  placeholder="Ví dụ: 124 Nguyễn Đình Chiểu, P. Đa Kao"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-[#E84A27]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">Món ăn đặc sản / Nổi bật</label>
-                <input
-                  type="text"
-                  value={newPlace.specialty}
-                  onChange={(e) => setNewPlace({ ...newPlace, specialty: e.target.value })}
-                  placeholder="Ví dụ: Bún thịt nướng chả giò giòn rụm"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-[#E84A27]"
+                  placeholder="Số nhà, tên đường, phường..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FFF1E8] border border-[#F2DFD1] focus:outline-none focus:border-[#DE3618]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Mức giá</label>
+                  <label className="block font-bold text-[#231A11] mb-1">Khoảng giá</label>
                   <input
                     type="text"
                     value={newPlace.price}
                     onChange={(e) => setNewPlace({ ...newPlace, price: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-[#E84A27]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FFF1E8] border border-[#F2DFD1] focus:outline-none focus:border-[#DE3618]"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Đánh giá ban đầu</label>
+                  <label className="block font-bold text-[#231A11] mb-1">Đánh giá ban đầu</label>
                   <input
                     type="number"
                     step="0.1"
-                    min="1"
-                    max="5"
+                    min="3.0"
+                    max="5.0"
                     value={newPlace.rating}
-                    onChange={(e) => setNewPlace({ ...newPlace, rating: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-[#E84A27]"
+                    onChange={(e) => setNewPlace({ ...newPlace, rating: parseFloat(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FFF1E8] border border-[#F2DFD1] focus:outline-none focus:border-[#DE3618]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 pt-2">
-                <label className="flex items-center gap-2 cursor-pointer font-bold text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={newPlace.hot}
-                    onChange={(e) => setNewPlace({ ...newPlace, hot: e.target.checked })}
-                    className="accent-[#E84A27] w-4 h-4"
-                  />
-                  Gắn ngọn lửa HOT bùng nổ ngay lập tức
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="hotCheck"
+                  checked={newPlace.hot}
+                  onChange={(e) => setNewPlace({ ...newPlace, hot: e.target.checked })}
+                  className="rounded text-[#DE3618] focus:ring-0 accent-[#DE3618] cursor-pointer"
+                />
+                <label htmlFor="hotCheck" className="font-semibold text-[#231A11] cursor-pointer">
+                  Gắn nhãn HOT Trending ngay khi kích hoạt
                 </label>
               </div>
 
-              <div className="pt-4 flex items-center justify-end gap-2 border-t border-gray-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#F2DFD1]">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-100 font-bold"
+                  className="px-4 py-2.5 rounded-full font-bold text-[#5C403A] hover:bg-gray-100 transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#E84A27] text-white font-bold hover:bg-[#d43d1c] shadow-lg shadow-[#E84A27]/25"
+                  className="px-6 py-2.5 rounded-full bg-[#DE3618] hover:bg-[#B91D00] text-white font-bold shadow-md shadow-[#DE3618]/25 transition-all"
                 >
-                  Xác nhận Thêm Quán
+                  Xác nhận thêm quán
                 </button>
               </div>
             </form>

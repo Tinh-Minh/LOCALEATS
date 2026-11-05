@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { navItems, places } from "../data/places";
+import { KNOWN_DESTINATIONS } from "../utils/destinationResolver";
 
 export default function Navbar({ onMenuToggle }) {
   const { pathname } = useLocation();
@@ -11,24 +12,59 @@ export default function Navbar({ onMenuToggle }) {
   const [isListening, setIsListening] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Lọc gợi ý quán ăn theo từ khóa
+  // Lọc gợi ý tìm kiếm thông minh: Kết hợp Quán ăn + Địa danh Google Maps nổi tiếng (Places Autocomplete)
   const searchSuggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
-    return places.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.specialty.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.address.toLowerCase().includes(q)
-    ).slice(0, 6);
+
+    // 1. Quán ăn
+    const matchedPlaces = places
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.specialty.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          p.address.toLowerCase().includes(q)
+      )
+      .map((p) => ({ ...p, isPlace: true }))
+      .slice(0, 4);
+
+    // 2. Địa danh du lịch / Tọa độ Google Places Autocomplete (Landmark 81, Bến Thành, Hồ Con Rùa...)
+    const matchedLandmarks = Object.entries(KNOWN_DESTINATIONS)
+      .filter(
+        ([key, val]) =>
+          key.includes(q) ||
+          val.name.toLowerCase().includes(q) ||
+          val.address.toLowerCase().includes(q)
+      )
+      .map(([key, val]) => ({
+        id: `landmark-${key}`,
+        name: val.name,
+        address: val.address,
+        lat: val.lat,
+        lng: val.lng,
+        category: "Địa danh nổi tiếng",
+        isLandmark: true,
+      }))
+      .slice(0, 3);
+
+    return [...matchedPlaces, ...matchedLandmarks];
   }, [searchQuery]);
 
-  // Xử lý khi chọn quán từ gợi ý tìm kiếm
-  const handleSelectPlaceSuggestion = (place) => {
+  // Xử lý khi chọn quán ăn hoặc địa danh từ gợi ý tìm kiếm
+  const handleSelectSuggestion = (item) => {
     setShowSuggestions(false);
-    setSearchQuery(place.name);
-    navigate("/", { state: { selectedPlaceId: place.id, autoFly: true } });
+    setSearchQuery(item.name);
+    if (item.isPlace) {
+      navigate("/", { state: { selectedPlaceId: item.id, autoFly: true } });
+    } else if (item.isLandmark) {
+      navigate("/", {
+        state: {
+          flyToCoords: { lat: item.lat, lng: item.lng },
+          landmarkName: item.name,
+        },
+      });
+    }
   };
 
   // Submit form tìm kiếm (nhấn Enter)
@@ -144,29 +180,49 @@ export default function Navbar({ onMenuToggle }) {
           </button>
         </form>
 
-        {/* Dropdown Gợi ý tìm kiếm */}
+        {/* Dropdown Gợi ý tìm kiếm thông minh (Places Autocomplete) */}
         {showSuggestions && searchSuggestions.length > 0 && (
-          <div className="absolute top-11 left-0 right-0 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 animate-scaleIn max-h-72 overflow-y-auto styled-scrollbar">
-            <div className="px-3.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              Kết quả tìm thấy ({searchSuggestions.length})
+          <div className="absolute top-11 left-0 right-0 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 animate-scaleIn max-h-80 overflow-y-auto styled-scrollbar">
+            <div className="px-3.5 py-1 text-[10px] font-black text-gray-400 uppercase tracking-wider flex items-center justify-between">
+              <span>Gợi ý Google Places ({searchSuggestions.length})</span>
+              <span className="text-[#E84A27]">Autocomplete</span>
             </div>
-            {searchSuggestions.map((place) => (
+            {searchSuggestions.map((item) => (
               <div
-                key={place.id}
-                onClick={() => handleSelectPlaceSuggestion(place)}
+                key={item.id}
+                onClick={() => handleSelectSuggestion(item)}
                 className="flex items-center gap-3 px-3.5 py-2 hover:bg-orange-50/70 cursor-pointer transition-colors group"
               >
-                <img
-                  src={place.image}
-                  alt={place.name}
-                  className="w-9 h-9 rounded-lg object-cover shrink-0 border border-gray-100"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[12px] font-extrabold text-gray-900 group-hover:text-[#E84A27] truncate transition-colors">
-                    {place.name}
+                {item.isLandmark ? (
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-[18px]">location_on</span>
                   </div>
-                  <div className="text-[10px] text-gray-500 truncate">
-                    {place.category} • ⭐ {place.rating} • {place.address}
+                ) : (
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-9 h-9 rounded-xl object-cover shrink-0 border border-gray-100"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[12px] font-extrabold text-gray-900 group-hover:text-[#E84A27] truncate transition-colors">
+                      {item.name}
+                    </span>
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.2 rounded shrink-0 ${
+                        item.isLandmark
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-orange-100 text-[#E84A27]"
+                      }`}
+                    >
+                      {item.isLandmark ? "Địa danh" : "Quán ăn"}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-gray-500 truncate mt-0.5">
+                    {item.isLandmark
+                      ? item.address
+                      : `${item.category} • ⭐ ${item.rating} • ${item.address}`}
                   </div>
                 </div>
                 <span className="material-symbols-outlined text-gray-300 group-hover:text-[#E84A27] text-sm shrink-0">

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { places } from "../data/places";
+import { resolveDestinationCoords } from "../utils/destinationResolver";
 
 // Các mẫu hành trình Food Tour mẫu được yêu thích
 const sampleItineraries = [
@@ -59,6 +60,7 @@ export default function TripPlannerPage() {
   // Điểm xuất phát & Điểm kết thúc của hành trình tùy chỉnh (người dùng tự do nhập)
   const [startPoint, setStartPoint] = useState("");
   const [destinationPoint, setDestinationPoint] = useState("");
+  const [destinationError, setDestinationError] = useState("");
   const [vehicle, setVehicle] = useState("car"); // 'bike', 'car'
 
   // Danh sách các trạm dừng chân ẩm thực do người dùng tự chọn (không fix cứng)
@@ -66,6 +68,57 @@ export default function TripPlannerPage() {
 
   const [searchPlaceQuery, setSearchPlaceQuery] = useState("");
   const [showAddStopModal, setShowAddStopModal] = useState(false);
+
+  // Tính toán mức giá trung bình dao động & tổng ngân sách từ các trạm dừng chân đã chọn
+  const priceSummary = useMemo(() => {
+    if (!selectedStops || selectedStops.length === 0) {
+      return {
+        avgRange: "Chưa chọn quán",
+        totalRange: "0đ",
+        hasStops: false,
+        count: 0,
+      };
+    }
+
+    let totalMin = 0;
+    let totalMax = 0;
+    let count = 0;
+
+    selectedStops.forEach((p) => {
+      if (!p.price) return;
+      const nums = p.price.match(/\d+[\d.]*/g);
+      if (nums && nums.length > 0) {
+        const min = parseInt(nums[0].replace(/\./g, ""), 10);
+        const max = nums.length > 1 ? parseInt(nums[1].replace(/\./g, ""), 10) : min;
+        if (!isNaN(min) && !isNaN(max)) {
+          totalMin += min;
+          totalMax += max;
+          count++;
+        }
+      }
+    });
+
+    if (count === 0) {
+      return {
+        avgRange: "35.000đ – 75.000đ",
+        totalRange: "50.000đ – 120.000đ",
+        hasStops: true,
+        count: selectedStops.length,
+      };
+    }
+
+    const avgMin = Math.round(totalMin / count);
+    const avgMax = Math.round(totalMax / count);
+
+    const formatVND = (val) => new Intl.NumberFormat("vi-VN").format(val) + "đ";
+
+    return {
+      avgRange: `${formatVND(avgMin)} – ${formatVND(avgMax)}`,
+      totalRange: `${formatVND(totalMin)} – ${formatVND(totalMax)}`,
+      hasStops: true,
+      count,
+    };
+  }, [selectedStops]);
 
   // Thêm trạm dừng
   const handleAddStop = (place) => {
@@ -101,6 +154,7 @@ export default function TripPlannerPage() {
   const handleApplySample = (tour) => {
     setStartPoint(tour.stops[0].name);
     setDestinationPoint(tour.stops[tour.stops.length - 1].name);
+    setDestinationError("");
     setVehicle(tour.vehicle);
 
     const tourPlaces = tour.stops
@@ -111,32 +165,66 @@ export default function TripPlannerPage() {
     setSelectedStops(tourPlaces);
   };
 
-  // Bắt đầu chuyến đi -> Điều hướng sang MapPage với toàn bộ chuỗi trạm dừng và vẽ lộ trình
-  const handleStartTrip = () => {
+  // Bắt đầu chuyến đi -> Điều hướng sang MapPage với toàn bộ chuỗi trạm dừng và ĐIỂM ĐẾN CUỐI CÙNG
+  const handleStartTrip = async () => {
+    // Bắt buộc phải nhập 1 địa chỉ hoặc địa điểm cụ thể, không được để trống
+    if (!destinationPoint || !destinationPoint.trim()) {
+      setDestinationError("Bắt buộc phải nhập địa chỉ hoặc địa điểm cụ thể cho điểm đến cuối cùng!");
+      const inputEl = document.getElementById("destination-point-input");
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
     if (!selectedStops.length) {
       alert("Vui lòng chọn ít nhất 1 hoặc nhiều quán ăn dừng chân vào kế hoạch trước khi bắt đầu!");
       return;
     }
 
-    // Chuẩn bị danh sách trạm dừng theo thứ tự người dùng đã thêm/sắp xếp
-    const stopsData = selectedStops.map((place, idx) => ({
+    // 1. Chuẩn bị danh sách các quán ăn dừng chân nạp năng lượng trước
+    const foodStops = selectedStops.map((place, idx) => ({
       id: place.id,
       name: place.name,
       address: place.address,
       lat: place.lat,
       lng: place.lng,
       category: place.category,
+      price: place.price,
       order: idx + 1,
       stopLetter: String.fromCharCode(66 + idx),
+      isFoodStop: true,
     }));
+
+    // 2. Tra cứu và phân giải tọa độ chính xác của ĐIỂM ĐẾN CUỐI CÙNG mà người dùng đã nhập
+    const lastFoodStop = foodStops[foodStops.length - 1];
+    const resolvedDest = await resolveDestinationCoords(destinationPoint, lastFoodStop);
+
+    // 3. Khởi tạo chặng Đích Đến Cuối Cùng (với cờ đích 🏁)
+    const destinationStop = {
+      id: "destination-final",
+      name: resolvedDest.name || destinationPoint,
+      address: resolvedDest.address || destinationPoint,
+      lat: resolvedDest.lat,
+      lng: resolvedDest.lng,
+      category: "Điểm Đến Cuối Cùng",
+      order: foodStops.length + 1,
+      stopLetter: "🏁",
+      isDestination: true,
+    };
+
+    // Chuỗi hành trình hoàn chỉnh: Quán 1 ➔ Quán 2 ➔ ... ➔ ĐÍCH ĐẾN CUỐI CÙNG
+    const fullItinerary = [...foodStops, destinationStop];
 
     navigate("/", {
       state: {
-        itineraryStops: stopsData,
-        selectedPlaceId: stopsData[0].id,
+        itineraryStops: fullItinerary,
+        selectedPlaceId: foodStops[0].id,
         vehicle,
         startPointName: startPoint,
         destinationPointName: destinationPoint,
+        destinationCoords: resolvedDest,
         isFoodTourTrip: true,
       },
     });
@@ -145,19 +233,57 @@ export default function TripPlannerPage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Lưu kế hoạch chuyến đi vào bộ sưu tập cá nhân
-  const handleSaveTrip = () => {
+  const handleSaveTrip = async () => {
+    if (!destinationPoint || !destinationPoint.trim()) {
+      setDestinationError("Bắt buộc phải nhập địa chỉ điểm đến trước khi lưu chuyến đi!");
+      const inputEl = document.getElementById("destination-point-input");
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
     if (!selectedStops.length) {
       alert("Vui lòng chọn ít nhất 1 quán ăn trước khi lưu chuyến đi!");
       return;
     }
+
+    const lastFoodStop = selectedStops[selectedStops.length - 1];
+    const resolvedDest = await resolveDestinationCoords(destinationPoint, lastFoodStop);
+
+    const foodStops = selectedStops.map((place, idx) => ({
+      id: place.id,
+      name: place.name,
+      address: place.address,
+      lat: place.lat,
+      lng: place.lng,
+      category: place.category,
+      order: idx + 1,
+      stopLetter: String.fromCharCode(66 + idx),
+      isFoodStop: true,
+    }));
+
+    const destinationStop = {
+      id: "destination-final",
+      name: resolvedDest.name || destinationPoint,
+      address: resolvedDest.address || destinationPoint,
+      lat: resolvedDest.lat,
+      lng: resolvedDest.lng,
+      category: "Điểm Đến Cuối Cùng",
+      order: foodStops.length + 1,
+      stopLetter: "🏁",
+      isDestination: true,
+    };
 
     const tripData = {
       id: "trip-" + Date.now(),
       title: `${startPoint || "Điểm xuất phát"} ➔ ${destinationPoint || "Điểm đến"}`,
       startPoint,
       destinationPoint,
+      destinationCoords: resolvedDest,
       vehicle,
-      stops: selectedStops,
+      stops: [...foodStops, destinationStop],
       totalKm,
       savedAt: new Date().toLocaleDateString("vi-VN"),
     };
@@ -379,20 +505,77 @@ export default function TripPlannerPage() {
                 </button>
               </div>
 
-              {/* 3. Điểm Đến Cuối Cùng */}
-              <div className="relative z-10 flex items-start gap-3 bg-blue-50/70 border border-blue-200/90 rounded-2xl p-3.5">
-                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[12px] shrink-0 shadow-md">
-                  {String.fromCharCode(66 + selectedStops.length)}
+              {/* 3. Điểm Đến Cuối Cùng (Bắt buộc - Không được để trống) */}
+              <div
+                className={`relative z-10 flex flex-col gap-2.5 rounded-2xl p-3.5 transition-all ${
+                  destinationError
+                    ? "bg-red-50/90 border-2 border-red-500 shadow-md ring-2 ring-red-400/20"
+                    : "bg-blue-50/70 border border-blue-200/90 shadow-xs"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-[12px] shrink-0 shadow-md transition-colors ${
+                      destinationError ? "bg-red-600" : "bg-blue-600"
+                    }`}
+                  >
+                    {String.fromCharCode(66 + selectedStops.length)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-700 uppercase tracking-wide">
+                        <span>Điểm đến cuối cùng</span>
+                        <span className="text-red-600 font-extrabold text-[11px]">* (Bắt buộc cụ thể)</span>
+                      </div>
+                      {destinationError && (
+                        <span className="text-[11px] font-bold text-red-600 flex items-center gap-1 animate-pulse">
+                          <span className="material-symbols-outlined text-[13px]">error</span>
+                          {destinationError}
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      id="destination-point-input"
+                      type="text"
+                      required
+                      value={destinationPoint}
+                      onChange={(e) => {
+                        setDestinationPoint(e.target.value);
+                        if (destinationError) setDestinationError("");
+                      }}
+                      placeholder="Bắt buộc: Nhập 1 địa chỉ hoặc địa điểm cụ thể (ví dụ: Bãi Sau Vũng Tàu, Chợ Đêm Đà Lạt...)"
+                      className={`w-full font-extrabold text-[14px] text-gray-900 bg-transparent outline-none mt-1 border-b pb-0.5 placeholder:text-gray-400 placeholder:font-normal transition-colors ${
+                        destinationError
+                          ? "border-red-500 focus:border-red-600"
+                          : "border-blue-200/60 focus:border-blue-600"
+                      }`}
+                    />
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wide">Điểm đến cuối cùng</div>
-                  <input
-                    type="text"
-                    value={destinationPoint}
-                    onChange={(e) => setDestinationPoint(e.target.value)}
-                    placeholder="Nhập địa chỉ hoặc tỉnh thành điểm đến (ví dụ: Vũng Tàu, Đà Lạt...)"
-                    className="w-full font-extrabold text-[14px] text-gray-900 bg-transparent outline-none mt-0.5 border-b border-blue-200/60 focus:border-blue-600 pb-0.5 placeholder:text-gray-400 placeholder:font-normal"
-                  />
+
+                {/* Chọn nhanh điểm đến phổ biến 1-chạm */}
+                <div className="pl-11 flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Chọn nhanh:</span>
+                  {[
+                    "Bãi Sau, TP. Vũng Tàu",
+                    "Chợ Đêm Đà Lạt",
+                    "Mũi Né, Phan Thiết",
+                    "Bến Ninh Kiều, Cần Thơ",
+                    "Hồ Hoàn Kiếm, Hà Nội",
+                    "Biển Mỹ Khê, Đà Nẵng",
+                  ].map((dest, dIdx) => (
+                    <button
+                      key={dIdx}
+                      type="button"
+                      onClick={() => {
+                        setDestinationPoint(dest);
+                        if (destinationError) setDestinationError("");
+                      }}
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 shadow-2xs hover:scale-105 active:scale-95 transition-all"
+                    >
+                      + {dest}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -423,6 +606,28 @@ export default function TripPlannerPage() {
                 <div className="flex items-center justify-between text-[12px]">
                   <span className="text-gray-500">Thời gian dừng ăn dự kiến:</span>
                   <span className="font-extrabold text-emerald-600">~{selectedStops.length * 35} phút</span>
+                </div>
+
+                {/* Mức Giá Trung Bình Dao Động & Ngân Sách Ẩm Thực Dự Kiến */}
+                <div className="pt-2 border-t border-dashed border-gray-200 flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="text-gray-600 font-medium flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px] text-orange-500">payments</span>
+                      Giá trung bình dao động:
+                    </span>
+                    <span className="font-extrabold text-[#E84A27] text-[13px]">
+                      {priceSummary.avgRange}
+                    </span>
+                  </div>
+
+                  {priceSummary.hasStops && (
+                    <div className="flex items-center justify-between text-[11px] bg-gradient-to-r from-orange-50 to-amber-50 p-2.5 rounded-xl border border-orange-200/80">
+                      <span className="text-gray-600 font-medium">Tổng ngân sách ({priceSummary.count} quán):</span>
+                      <span className="font-extrabold text-amber-900 bg-white px-2 py-0.5 rounded-md border border-amber-200 shadow-2xs">
+                        {priceSummary.totalRange}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

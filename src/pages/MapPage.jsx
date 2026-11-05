@@ -52,6 +52,12 @@ export default function MapPage() {
         mapRef.current.flyToLocation(p.lng, p.lat, 16.5);
       }
       navigate(location.pathname, { replace: true, state: {} });
+    } else if (location.state?.flyToCoords && mapRef.current) {
+      mapRef.current.flyToLocation(location.state.flyToCoords.lng, location.state.flyToCoords.lat, 16.5);
+      if (location.state.landmarkName) {
+        setMapSearchQuery(location.state.landmarkName);
+      }
+      navigate(location.pathname, { replace: true, state: {} });
     }
 
     if (location.state?.searchQuery) {
@@ -94,14 +100,45 @@ export default function MapPage() {
     return true;
   });
 
-  const place = places.find((p) => p.id === selectedId);
+  const destinationStop = itineraryStops?.find((s) => s.isDestination && s.id === selectedId);
+  const place = places.find((p) => p.id === selectedId) || (destinationStop ? {
+    id: destinationStop.id,
+    name: destinationStop.name,
+    address: destinationStop.address,
+    lat: destinationStop.lat,
+    lng: destinationStop.lng,
+    category: "Điểm Đến Cuối Cùng",
+    rating: 5.0,
+    reviewCount: "Đích đến",
+    price: "Điểm đến của bạn",
+    openNow: true,
+    openHours: "24/24",
+    specialty: "Đích đến hành trình Food Tour của bạn",
+    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80",
+    tags: ["Điểm Đến Cuối", "Food Tour", "Kết Thúc Lộ Trình"],
+    isDestination: true,
+  } : null);
 
-  // Handle start route from PlacePopup
+  // Handle start route from PlacePopup - Tự động thu phóng để thấy ngay cả Vị trí của tôi và Điểm đến
   const handleStartRoute = async (destination, mode) => {
+    if (userLocation && destination && mapRef.current?.fitBounds) {
+      const minLng = Math.min(userLocation.lng, destination.lng);
+      const maxLng = Math.max(userLocation.lng, destination.lng);
+      const minLat = Math.min(userLocation.lat, destination.lat);
+      const maxLat = Math.max(userLocation.lat, destination.lat);
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+      mapRef.current.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
+        padding: isMobile
+          ? { top: 90, bottom: 280, left: 50, right: 50 }
+          : { top: 100, bottom: 100, left: 400, right: 100 },
+        duration: 800,
+        maxZoom: 16.0,
+      });
+    }
     await startRoute(destination, mode);
   };
 
-  // Handle selecting a pin — if routing is active, auto-reroute to new place
+  // Handle selecting a pin — if routing is active, auto-reroute to newly selected place
   const handleSelectPlace = (id) => {
     setSelectedId(id);
     // If already routing, auto-reroute to newly selected place
@@ -109,6 +146,11 @@ export default function MapPage() {
       const newPlace = places.find((p) => p.id === id);
       if (newPlace) {
         startRoute({ lat: newPlace.lat, lng: newPlace.lng }, transportMode);
+      } else {
+        const stop = itineraryStops.find((s) => s.id === id);
+        if (stop) {
+          startRoute({ lat: stop.lat, lng: stop.lng }, transportMode);
+        }
       }
     }
   };
@@ -267,29 +309,44 @@ export default function MapPage() {
               </button>
             </div>
             <div className="flex flex-col gap-2.5">
-              <div className="flex items-start gap-2">
-                <div className="w-3.5 h-3.5 bg-[#E84A27] rounded-full shrink-0 opacity-80 animate-pulse mt-0.5"></div>
-                <span className="text-gray-700 leading-relaxed text-[11px]">
-                  <strong className="text-gray-900">Kích thước giọt nước</strong>: Tỉ lệ thuận với Điểm sao & Lượng đánh giá lớn.
+              {/* Luxury Gold Aura Legend: Sponsored VIP */}
+              <div className="flex items-center gap-2 pt-0.5">
+                <div className="relative w-5 h-5 flex items-center justify-center shrink-0">
+                  <span className="absolute inset-0 rounded-full bg-[#FFD700]/50 animate-ping" />
+                  <span
+                    className="material-symbols-outlined text-[#F58A07] text-lg"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    crown
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#5C453C] leading-tight">
+                  <strong className="text-[#3E1B00]">👑 Hào quang Vàng Kim</strong>: Đối tác VIP & Tài trợ (Ưu đãi đặc quyền).
                 </span>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="text-[#E84A27] shrink-0 text-sm">🔥</span>
-                <span className="text-gray-700 leading-relaxed text-[11px]">
-                  <strong className="text-gray-900">Hào quang ánh lửa 🔥</strong>: Quán đang bùng nổ xu hướng trong 7–14 ngày.
+
+              {/* Flame Halo Symbol: Trending Hot */}
+              <div className="flex items-center gap-2">
+                <div className="relative w-5 h-5 flex items-center justify-center shrink-0">
+                  <span className="absolute inset-0 rounded-full bg-[#FF9F1C]/40 animate-pulse" />
+                  <span className="material-symbols-outlined text-[#E84A27] text-lg">
+                    local_fire_department
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#5C453C] leading-tight">
+                  <strong className="text-[#8E1400]">🔥 Hào quang Ánh Lửa</strong>: Quán bùng nổ xu hướng & đánh giá cao.
                 </span>
               </div>
-              {/* Route legend */}
-              <div className="flex items-start gap-2">
-                <div className="w-3.5 h-1 bg-[#E84A27] rounded-full shrink-0 mt-1.5"></div>
-                <span className="text-gray-700 leading-relaxed text-[11px]">
-                  <strong className="text-gray-900">Đường cam</strong>: Tuyến đường xe máy/ô tô.
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-3.5 h-1 bg-emerald-500 rounded-full shrink-0 mt-1.5"></div>
-                <span className="text-gray-700 leading-relaxed text-[11px]">
-                  <strong className="text-gray-900">Đường xanh</strong>: Tuyến đường đi bộ.
+
+              {/* Teardrop Dynamic Size Symbol */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-baseline gap-1 shrink-0">
+                  <span className="inline-block w-3.5 h-4.5 rounded-t-full rounded-b-[2px] bg-[#E84A27]" />
+                  <span className="inline-block w-2.5 h-3.5 rounded-t-full rounded-b-[2px] bg-[#FF9F1C]" />
+                  <span className="inline-block w-2 h-2.5 rounded-t-full rounded-b-[1px] bg-[#FF9F1C]/50" />
+                </div>
+                <span className="text-[11px] text-[#5C453C] leading-tight">
+                  <strong className="text-[#231812]">Giọt nước</strong>: Tỉ lệ thuận với Điểm sao & Lượng đánh giá lớn.
                 </span>
               </div>
             </div>
@@ -325,6 +382,12 @@ export default function MapPage() {
                     mapRef.current?.flyToLocation(loc.lng, loc.lat, 16.5);
                   }
                 },
+              },
+              {
+                icon: "layers",
+                color: "text-blue-600",
+                title: "Đổi Google Maps (2D) / 3D",
+                onClick: () => mapRef.current?.toggleMapMode(),
               },
               {
                 icon: "add",
@@ -407,14 +470,20 @@ export default function MapPage() {
                 <div className="min-w-0 flex-1 text-[11px]">
                   <div className="text-cyan-400 font-bold uppercase text-[9px] flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                    Kế hoạch Food Tour ({itineraryStops.length} trạm dừng)
+                    Food Tour: {itineraryStops.filter((s) => !s.isDestination).length} quán ➔ 🏁 Đích đến
                   </div>
                   <div className="font-extrabold text-white truncate">
-                    Đang tới: {itineraryStops[0]?.name}
+                    Chặng 1 (Ăn uống): {itineraryStops[0]?.name}
                   </div>
-                  <div className="text-gray-400 text-[10px] truncate">
-                    Tiếp theo: {itineraryStops.slice(1).map((s) => s.name).join(" ➔ ")}
+                  <div className="text-gray-300 text-[10px] truncate">
+                    Tiếp theo: {itineraryStops.slice(1).map((s) => (s.isDestination ? `🏁 ${s.name}` : s.name)).join(" ➔ ")}
                   </div>
+                  {itineraryStops.find((s) => s.isDestination) && (
+                    <div className="text-amber-400 font-bold text-[10px] truncate mt-0.5 flex items-center gap-1">
+                      <span>🏁 Đích đến:</span>
+                      <span className="text-amber-200 truncate">{itineraryStops.find((s) => s.isDestination).name}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
