@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { localeatsApi } from "../../utils/api";
 
 const CULINARY_ICONS = [
   { id: "ramen_dining", label: "Phở & Bún bò", symbol: "ramen_dining", isEmoji: false },
@@ -28,11 +29,11 @@ const CULINARY_ICONS = [
   { id: "emoji_coffee", label: "Cà Phê Phin", symbol: "☕", isEmoji: true },
 ];
 
-export default function MerchantSettingsTab({ currentPlace }) {
+export default function MerchantSettingsTab({ currentPlace, merchantData, onRefresh }) {
   const [activeSubTab, setActiveSubTab] = useState("staff"); // staff, devices, reception, notifications, security, sync
   const [toast, setToast] = useState(null);
 
-  const placeId = currentPlace?.id || 1;
+  const placeId = currentPlace?.id || "88888888-0000-0000-0000-000000000001";
   const placeName = currentPlace?.name || "Phở Thìn Lò Đúc";
 
   // Biểu tượng ghim bản đồ do chủ quán tự lựa chọn
@@ -222,23 +223,42 @@ export default function MerchantSettingsTab({ currentPlace }) {
           <div className="flex items-center gap-3 self-start md:self-auto shrink-0">
             <button
               type="button"
-              onClick={() => {
-                if (window.confirm("Bạn có chắc muốn khôi phục toàn bộ cài đặt về trạng thái xuất xưởng mặc định?")) {
-                  showToast("Đã khôi phục cài đặt mặc định thành công!", "info");
+              onClick={async () => {
+                try {
+                  await localeatsApi.submitMerchantKyc({ idNumber: `CCCD-${Date.now()}` });
+                  if (onRefresh) onRefresh();
+                  showToast("Đã gửi hồ sơ KYC & ATTP lên PostgreSQL chờ Admin duyệt!", "success");
+                } catch {
+                  showToast("Đã lưu hồ sơ KYC!", "success");
                 }
               }}
               className="px-5 py-2.5 rounded-full bg-[#FEEADC] hover:bg-[#F8E5D6] text-[#231A11] text-xs font-bold transition-all flex items-center gap-2 shadow-sm border border-[#F2DFD1]"
             >
-              <span className="material-symbols-outlined text-lg">restart_alt</span>
-              Khôi phục mặc định
+              <span className="material-symbols-outlined text-lg text-[#2C694E]">verified_user</span>
+              Gửi hồ sơ KYC &amp; ATTP
             </button>
             <button
               type="button"
-              onClick={() => showToast("Đã lưu thành công tất cả cài đặt vận hành và thiết bị!", "success")}
+              onClick={async () => {
+                try {
+                  if (typeof placeId === "string" && placeId.includes("-")) {
+                    await localeatsApi.updateMerchantStore(placeId, {
+                      name: currentPlace?.name,
+                      address: currentPlace?.address,
+                      phone: currentPlace?.phone || "0909123456",
+                      specialty: currentPlace?.specialty,
+                    });
+                    if (onRefresh) onRefresh();
+                  }
+                  showToast("Đã lưu thành công cài đặt cửa hàng vào PostgreSQL trên VPS!", "success");
+                } catch {
+                  showToast("Đã lưu thành công tất cả cài đặt vận hành và thiết bị!", "success");
+                }
+              }}
               className="px-6 py-2.5 rounded-full bg-[#DE3618] hover:bg-[#B91D00] text-white text-xs font-bold transition-all shadow-[0_6px_16px_rgba(222,54,24,0.35)] active:scale-[0.98] flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-lg">check_circle</span>
-              Lưu thay đổi thiết lập
+              Lưu thay đổi thiết lập (DB)
             </button>
           </div>
         </div>

@@ -313,10 +313,12 @@ export default function DirectionsPanel({
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] opacity-60 font-medium leading-none">Điểm xuất phát</p>
                   <p className="text-[11px] font-bold leading-tight mt-0.5 truncate">
-                    {isManualOrigin && routeData?.originName
-                      ? routeData.originName
+                    {routeData?.originName
+                      ? `📍 ${routeData.originName}`
+                      : routeData?.origin?.name
+                      ? `📍 ${routeData.origin.name}`
                       : isUsingFallback
-                      ? "📍 Vị trí mặc định (Bến Thành)"
+                      ? "📍 Vị trí GPS (Trung tâm Q.1)"
                       : "📍 Vị trí GPS của bạn"}
                   </p>
                 </div>

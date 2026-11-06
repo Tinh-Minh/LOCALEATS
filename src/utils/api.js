@@ -188,7 +188,52 @@ export const localeatsApi = {
   claimVoucher: (id) => apiRequest(`/campaigns/${id}/claim`, { method: "POST" }),
   getMerchantOverview: (storeId) => apiRequest(`/merchant/overview${storeId ? `?storeId=${storeId}` : ""}`),
   createMerchantMenuItem: (payload) => apiRequest("/merchant/menu", { method: "POST", body: JSON.stringify(payload) }),
+  toggleMerchantMenuItemStatus: (id, status) =>
+    apiRequest(`/merchant/menu/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  deleteMerchantMenuItem: (id) => apiRequest(`/merchant/menu/${id}`, { method: "DELETE" }),
+  replyMerchantReview: (id, content) =>
+    apiRequest(`/merchant/reviews/${id}/reply`, { method: "POST", body: JSON.stringify({ content }) }),
+  updateMerchantStore: (id, payload) =>
+    apiRequest(`/merchant/stores/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  createMerchantCampaign: (payload) =>
+    apiRequest("/merchant/campaigns", { method: "POST", body: JSON.stringify(payload) }),
+  submitMerchantKyc: (payload) =>
+    apiRequest("/merchant/kyc", { method: "POST", body: JSON.stringify(payload) }),
+
+  // Admin Portal APIs
   getAdminOverview: () => apiRequest("/admin/overview"),
   adminCreateStore: (payload) => apiRequest("/admin/stores", { method: "POST", body: JSON.stringify(payload) }),
+  adminUpdateStoreStatus: (id, status) =>
+    apiRequest(`/admin/stores/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  adminListUsers: () => apiRequest("/admin/users"),
+  adminToggleUserLock: (id, locked) =>
+    apiRequest(`/admin/users/${id}/lock`, { method: "PATCH", body: JSON.stringify({ locked }) }),
+  adminUpdateUserStatus: (id, status) =>
+    apiRequest(`/admin/users/${id}/lock`, { method: "PATCH", body: JSON.stringify({ locked: status === "suspended" }) }),
+  adminReviewKyc: (id, status) =>
+    apiRequest(`/admin/kyc/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  adminListReports: () => apiRequest("/admin/reports"),
+  adminResolveReport: (id, status) =>
+    apiRequest(`/admin/reports/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  adminUpdateFraudCase: (id, status) =>
+    apiRequest(`/admin/fraud/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  adminUpdateFraudStatus: (id, status) =>
+    apiRequest(`/admin/fraud/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  adminUpdateCampaignStatus: (id, status) =>
+    apiRequest(`/admin/campaigns/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  adminModerateReview: (id, status) =>
+    apiRequest(`/admin/reviews/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  adminUpdateReviewStatus: (id, status) =>
+    apiRequest(`/admin/reviews/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  adminUpdateRoutingNode: (id, status) =>
+    apiRequest(`/admin/routing-nodes/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  adminToggleAiModel: (id, isActive) =>
+    apiRequest(`/admin/ai/models/${id}`, { method: "PATCH", body: JSON.stringify({ isActive }) }),
+  adminUpdateAiModel: (id, isActive) =>
+    apiRequest(`/admin/ai/models/${id}`, { method: "PATCH", body: JSON.stringify({ isActive }) }),
+  adminListKol: () => apiRequest("/admin/kol"),
+  adminListRoles: () => apiRequest("/admin/roles"),
+  adminListAudit: () => apiRequest("/admin/audit"),
+  adminListAiModels: () => apiRequest("/admin/ai/models"),
 };
 

@@ -1,7 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { places } from "../data/places";
-import { apiFetch } from "../utils/api";
+import { localeatsApi } from "../utils/api";
 
 // Import 7 High-Fidelity Stitch Merchant Tabs
 import MerchantOverviewTab from "./merchant/MerchantOverviewTab";
@@ -13,39 +12,58 @@ import MerchantReviewsTab from "./merchant/MerchantReviewsTab";
 import MerchantSettingsTab from "./merchant/MerchantSettingsTab";
 
 export default function MerchantDashboardPage() {
-  const [selectedPlaceId] = useState(1);
+  const [selectedStoreId, setSelectedStoreId] = useState(null);
   const [activeNav, setActiveNav] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(true);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [merchantData, setMerchantData] = useState(null);
+  const [showStoreSelector, setShowStoreSelector] = useState(false);
+
+  const loadMerchantData = useCallback((storeIdOverride) => {
+    const sid = storeIdOverride !== undefined ? storeIdOverride : selectedStoreId;
+    return localeatsApi
+      .getMerchantOverview(sid)
+      .then((data) => {
+        if (data) setMerchantData(data);
+        return data;
+      })
+      .catch(() => null);
+  }, [selectedStoreId]);
 
   useEffect(() => {
-    let mounted = true;
-    apiFetch("/api/merchant/overview")
-      .then((data) => {
-        if (mounted && data) setMerchantData(data);
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    loadMerchantData(selectedStoreId);
+  }, [selectedStoreId, loadMerchantData]);
 
   const currentPlace = useMemo(() => {
-    const base = places.find((p) => p.id === selectedPlaceId) || places[0];
-    if (merchantData?.store) {
-      return {
-        ...base,
-        ...merchantData.store,
-        district: merchantData.store.address || base.district,
-        merchantStats: merchantData.stats,
-        recentVisits: merchantData.recentVisits,
-        activeNavigations: merchantData.activeNavigations,
-      };
-    }
-    return base;
-  }, [selectedPlaceId, merchantData]);
+    const s = merchantData?.store || {};
+    return {
+      id: s.id || "88888888-0000-0000-0000-000000000001",
+      name: s.name || "Đang tải dữ liệu quán từ PostgreSQL...",
+      address: s.address || "TP. Hồ Chí Minh",
+      district: s.district || s.address || "Quận 1",
+      phone: s.phone || "0909 123 456",
+      specialty: s.specialty || "Món ngon đặc trưng",
+      lat: Number(s.latitude || 10.7769),
+      lng: Number(s.longitude || 106.7009),
+      rating: Number(s.rating_avg || 4.8),
+      reviews: Number(s.review_count || 0),
+      visitCount: Number(s.visit_count || 0),
+      voteCount: Number(s.vote_count || 0),
+      priceMin: Number(s.price_min || 35000),
+      priceMax: Number(s.price_max || 85000),
+      status: s.status || "active",
+      closeAt: "23:00",
+      image: "https://images.unsplash.com/photo-1547928576-a4a33237cbc3?w=400&q=80",
+      merchantStats: merchantData?.stats || {},
+      dailyStats: merchantData?.dailyStats || [],
+      recentVisits: merchantData?.recentVisits || [],
+      activeNavigations: merchantData?.activeNavigations || [],
+      campaigns: merchantData?.campaigns || [],
+      reviewList: merchantData?.reviews || [],
+      menuList: merchantData?.menu || [],
+    };
+  }, [merchantData]);
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
@@ -96,20 +114,49 @@ export default function MerchantDashboardPage() {
             </button>
           </div>
 
-          {/* Chi nhánh đang chọn */}
-          <div className="px-5 py-4">
-            <div className="bg-[#FEEADC] rounded-2xl p-3 flex items-center justify-between border border-[#F2DFD1]">
+          {/* Chi nhánh đang chọn (lấy trực tiếp từ PostgreSQL) */}
+          <div className="px-5 py-4 relative">
+            <div
+              onClick={() => setShowStoreSelector((prev) => !prev)}
+              className="bg-[#FEEADC] rounded-2xl p-3 flex items-center justify-between border border-[#F2DFD1] cursor-pointer hover:border-[#DE3618]/40 transition-all"
+              title="Nhấn để chuyển đổi chi nhánh quán trong PostgreSQL"
+            >
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#2C694E] animate-pulse shrink-0" />
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-bold text-[#231A11] truncate">{currentPlace.name}</span>
-                  <span className="text-[11px] text-[#5C403A] truncate">{currentPlace.district || "Chi nhánh Hoàn Kiếm"}</span>
+                  <span className="text-[11px] text-[#5C403A] truncate">{currentPlace.district}</span>
                 </div>
               </div>
-              <span className="material-symbols-outlined text-[#5C403A] text-lg cursor-pointer hover:text-[#231A11]">
+              <span className="material-symbols-outlined text-[#5C403A] text-lg hover:text-[#231A11]">
                 unfold_more
               </span>
             </div>
+
+            {showStoreSelector && Array.isArray(merchantData?.allStores) && merchantData.allStores.length > 0 && (
+              <div className="absolute left-5 right-5 top-20 z-50 bg-white rounded-2xl shadow-2xl border border-[#F2DFD1] max-h-60 overflow-y-auto p-1.5 space-y-1">
+                {merchantData.allStores.map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedStoreId(st.id);
+                      setShowStoreSelector(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors flex flex-col ${
+                      String(st.id) === String(currentPlace.id)
+                        ? "bg-[#DE3618] text-white font-bold"
+                        : "hover:bg-[#FFF1E8] text-[#231A11]"
+                    }`}
+                  >
+                    <span className="truncate font-bold">{st.name}</span>
+                    <span className={`text-[10px] truncate ${String(st.id) === String(currentPlace.id) ? "text-white/80" : "text-[#5C403A]"}`}>
+                      {st.district || st.address}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Navigation Links */}
@@ -242,20 +289,38 @@ export default function MerchantDashboardPage() {
         {/* BODY CONTENT CONTAINER */}
         <main className="pt-20 px-3 sm:px-6 md:px-8 pb-12 flex flex-col gap-8 max-w-[1600px] w-full mx-auto">
           {activeNav === "dashboard" && (
-            <MerchantOverviewTab currentPlace={currentPlace} isOpen={isOpen} setIsOpen={setIsOpen} />
+            <MerchantOverviewTab
+              currentPlace={currentPlace}
+              merchantData={merchantData}
+              onRefresh={loadMerchantData}
+              isOpen={isOpen}
+              setIsOpen={setIsOpen}
+            />
           )}
 
-          {activeNav === "quan-cua-toi" && <MerchantMenuTab />}
+          {activeNav === "quan-cua-toi" && (
+            <MerchantMenuTab currentPlace={currentPlace} merchantData={merchantData} onRefresh={loadMerchantData} />
+          )}
 
-          {activeNav === "ban-do-chi-duong" && <MerchantMapTab />}
+          {activeNav === "ban-do-chi-duong" && (
+            <MerchantMapTab currentPlace={currentPlace} merchantData={merchantData} onRefresh={loadMerchantData} />
+          )}
 
-          {activeNav === "phan-tich-bieu-do" && <MerchantAnalyticsTab />}
+          {activeNav === "phan-tich-bieu-do" && (
+            <MerchantAnalyticsTab currentPlace={currentPlace} merchantData={merchantData} onRefresh={loadMerchantData} />
+          )}
 
-          {activeNav === "goi-vip-tai-tro" && <MerchantVipTab />}
+          {activeNav === "goi-vip-tai-tro" && (
+            <MerchantVipTab currentPlace={currentPlace} merchantData={merchantData} onRefresh={loadMerchantData} />
+          )}
 
-          {activeNav === "danh-gia" && <MerchantReviewsTab />}
+          {activeNav === "danh-gia" && (
+            <MerchantReviewsTab currentPlace={currentPlace} merchantData={merchantData} onRefresh={loadMerchantData} />
+          )}
 
-          {activeNav === "cai-dat" && <MerchantSettingsTab currentPlace={currentPlace} />}
+          {activeNav === "cai-dat" && (
+            <MerchantSettingsTab currentPlace={currentPlace} merchantData={merchantData} onRefresh={loadMerchantData} />
+          )}
         </main>
       </div>
     </div>

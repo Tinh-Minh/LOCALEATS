@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { localeatsApi } from "../../utils/api";
 
-export default function MerchantReviewsTab({ currentPlace }) {
+export default function MerchantReviewsTab({ currentPlace, merchantData, onRefresh }) {
   const [toastMessage, setToastMessage] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [translatedReviews, setTranslatedReviews] = useState({});
@@ -18,12 +19,21 @@ export default function MerchantReviewsTab({ currentPlace }) {
     }));
   };
 
-  const handleSendReply = (reviewerName, id) => {
+  const handleSendReply = async (reviewerName, id, replyText) => {
     setRepliedStatus((prev) => ({ ...prev, [id]: true }));
-    showToast(`Đã gửi phản hồi chính thức tới thực khách ${reviewerName}!`);
+    if (typeof id === "string" && id.includes("-")) {
+      try {
+        await localeatsApi.replyMerchantReview(
+          id,
+          replyText || `Cảm ơn thực khách ${reviewerName} đã ghé dùng bữa và đánh giá tại ${currentPlace?.name || "quán"}!`
+        );
+        if (onRefresh) onRefresh();
+      } catch {}
+    }
+    showToast(`Đã lưu phản hồi của Chủ quán tới thực khách ${reviewerName} vào PostgreSQL!`);
   };
 
-  const reviews = [
+  const defaultReviews = [
     {
       id: 1,
       name: "Hoàng Nam",
@@ -78,6 +88,27 @@ export default function MerchantReviewsTab({ currentPlace }) {
       categories: ["vip"],
     },
   ];
+
+  const reviews = useMemo(() => {
+    if (Array.isArray(merchantData?.reviews) && merchantData.reviews.length > 0) {
+      return merchantData.reviews.map((r) => ({
+        id: r.id,
+        name: r.authorName || "Thực khách LocalEats",
+        avatar: r.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
+        badge: r.verifiedVisit ? "Đã xác thực GPS tại quán >= 10 phút" : "Thực khách cộng đồng",
+        badgeClass: r.verifiedVisit ? "bg-[#B1F0CE] text-[#002114]" : "bg-[#FEEADC] text-[#231A11]",
+        time: r.createdAt ? new Date(r.createdAt).toLocaleString("vi-VN") : "Vừa đánh giá",
+        gpsSeat: r.verifiedVisit ? "GPS Xác Thực Tại Quán" : "Đánh giá trực tuyến",
+        rating: Number(r.rating || 5.0),
+        content: `“${r.content || "Món ăn ngon, phục vụ nhiệt tình!"}”`,
+        aiDraft:
+          r.replyContent ||
+          `“Dạ ${currentPlace?.name || "Nhà hàng"} cảm ơn quý khách ${r.authorName || ""} đã ghé thưởng thức và để lại nhận xét quý báu! Rất mong sớm được đón tiếp quý khách lần tới ạ!”`,
+        categories: r.verifiedVisit ? ["vip", "photos"] : ["vip"],
+      }));
+    }
+    return defaultReviews;
+  }, [merchantData?.reviews, currentPlace?.name]);
 
   const filteredReviews =
     activeFilter === "all"

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function MerchantMapTab({ currentPlace }) {
+export default function MerchantMapTab({ currentPlace, merchantData, onRefresh }) {
   const [toastMessage, setToastMessage] = useState(null);
   const [beaconActive, setBeaconActive] = useState(false);
 
@@ -71,6 +71,44 @@ export default function MerchantMapTab({ currentPlace }) {
       actionLabel: "Gửi chỉ đường chi tiết",
     },
   ]);
+
+  useEffect(() => {
+    const navs = merchantData?.activeNavigations || [];
+    const visits = merchantData?.recentVisits || [];
+    if (navs.length > 0 || visits.length > 0) {
+      const mappedNavs = navs.map((n, idx) => ({
+        id: String(n.sessionId || idx).slice(0, 6).toUpperCase(),
+        initials: (n.visitor || "TK").slice(0, 2).toUpperCase(),
+        tier: n.status === "near_store" ? "Đang dừng tại quán (Đếm 10p)" : "Đang di chuyển GPS Live",
+        vehicle: n.mode === "car" ? "Ô tô" : n.mode === "walk" ? "Đi bộ" : "Xe máy",
+        vehicleIcon: n.mode === "car" ? "directions_car" : n.mode === "walk" ? "directions_walk" : "two_wheeler",
+        vehicleColor: n.status === "near_store" ? "bg-[#B1F0CE] text-[#2C694E]" : "bg-[#FFDCC2] text-[#8F4E00]",
+        location: `${n.visitor || "Thực khách GPS"} (${Number(n.lat || 10.77).toFixed(4)}, ${Number(n.lng || 106.70).toFixed(4)})`,
+        distance: `Còn ~${n.distanceMeters || 120}m`,
+        eta: n.status === "near_store" ? `Đã dừng: ${n.dwellSeconds || 0}s / 600s` : "Dự kiến tới: ~3 phút",
+        party: "Thực khách LocalEats",
+        table: n.status === "near_store" ? "Đang xác nhận 10p" : "Đang tới quán",
+        tableClass: n.status === "near_store" ? "bg-[#B1F0CE] text-[#002114]" : "bg-[#FFF1E8] text-[#5C403A]",
+        actionLabel: "Đón khách tại cửa",
+      }));
+      const mappedVisits = visits.slice(0, 6).map((v, idx) => ({
+        id: String(v.id || idx).slice(0, 6).toUpperCase(),
+        initials: (v.visitor || "KH").slice(0, 2).toUpperCase(),
+        tier: "Đã xác nhận GPS >= 10 phút",
+        vehicle: v.mode === "car" ? "Ô tô" : v.mode === "walk" ? "Đi bộ" : "Xe máy",
+        vehicleIcon: v.mode === "car" ? "directions_car" : v.mode === "walk" ? "directions_walk" : "two_wheeler",
+        vehicleColor: "bg-[#B1F0CE] text-[#2C694E]",
+        location: `${v.visitor || "Thực khách GPS"} • Quãng đường ${v.travelDistanceMeters || 850}m`,
+        distance: "Tại quán (0m)",
+        eta: `Dừng ${Math.round((v.dwellSeconds || 600) / 60)} phút`,
+        party: "Khách đã check-in GPS",
+        table: "Đã xác thực lượt ghé",
+        tableClass: "bg-[#B1F0CE] text-[#002114]",
+        actionLabel: "Đã phục vụ",
+      }));
+      setInboundDiners([...mappedNavs, ...mappedVisits]);
+    }
+  }, [merchantData?.activeNavigations, merchantData?.recentVisits]);
 
   const copyDirections = () => {
     const text = `Chỉ đường đến ${currentPlace?.name || "Bếp Trưởng Hà Nội"}: Số 38B Phố Mã Mây, Hoàn Kiếm, Hà Nội (cách ngã tư Tạ Hiện 150m). Có bảo vệ dắt xe miễn phí. Hotline đón tiếp: 0982.38.38.38`;

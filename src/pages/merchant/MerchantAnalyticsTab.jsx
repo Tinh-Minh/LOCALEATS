@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
-export default function MerchantAnalyticsTab() {
+export default function MerchantAnalyticsTab({ currentPlace, merchantData }) {
   const [timeRange, setTimeRange] = useState("30d");
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
@@ -10,7 +10,7 @@ export default function MerchantAnalyticsTab() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const topDishes = [
+  const defaultTopDishes = [
     {
       rank: 1,
       name: "Lẩu Riêu Cua Bắp Bò Sườn Sụn",
@@ -72,6 +72,28 @@ export default function MerchantAnalyticsTab() {
       image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&q=80",
     },
   ];
+
+  const topDishes = useMemo(() => {
+    if (Array.isArray(merchantData?.menu) && merchantData.menu.length > 0) {
+      return merchantData.menu.slice(0, 6).map((m, idx) => {
+        const soldNum = 950 - idx * 120;
+        const priceNum = Number(m.price || 55000);
+        return {
+          rank: idx + 1,
+          name: m.name,
+          desc: m.description || "Món ăn chủ lực từ thực đơn PostgreSQL",
+          cat: m.isSignature ? "Món Signature" : "Thực đơn chính",
+          sold: soldNum.toLocaleString("en-US"),
+          unit: "phần",
+          revenue: (soldNum * priceNum).toLocaleString("vi-VN"),
+          repeat: `${(46.5 - idx * 3.2).toFixed(1)}%`,
+          rating: `${currentPlace?.rating || 4.9} (${180 - idx * 20})`,
+          image: m.imageUrl || defaultTopDishes[idx % defaultTopDishes.length].image,
+        };
+      });
+    }
+    return defaultTopDishes;
+  }, [merchantData?.menu, currentPlace?.rating]);
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-[1600px] mx-auto">

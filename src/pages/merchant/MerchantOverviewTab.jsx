@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { localeatsApi } from "../../utils/api";
 
 const defaultMenuItems = [
   {
@@ -96,6 +97,8 @@ export default function MerchantOverviewTab({
     reviews: 4820,
     closeAt: "23:00",
   },
+  merchantData,
+  onRefresh,
   isOpen: propIsOpen,
   setIsOpen: propSetIsOpen,
   menuItems: propMenuItems,
@@ -108,23 +111,68 @@ export default function MerchantOverviewTab({
   const setIsOpen = propSetIsOpen || setInternalIsOpen;
 
   const [items, setItems] = useState(defaultMenuItems);
+
+  useEffect(() => {
+    if (Array.isArray(merchantData?.menu) && merchantData.menu.length > 0) {
+      setItems(
+        merchantData.menu.slice(0, 8).map((m, idx) => ({
+          id: m.id,
+          name: m.name,
+          price: `${Number(m.price || 45000).toLocaleString("vi-VN")}đ`,
+          salesCount: 320 + idx * 85,
+          status: m.status === "sold_out" ? "Tạm hết món" : "Còn món",
+          isBestseller: Boolean(m.isSignature || idx < 2),
+          image: m.imageUrl || defaultMenuItems[idx % defaultMenuItems.length].image,
+        }))
+      );
+    }
+  }, [merchantData?.menu]);
+
   const menuItems = propMenuItems || items;
 
-  const handleToggleStatus = (id) => {
+  const handleToggleStatus = async (id) => {
     if (propToggleItemStatus) {
       propToggleItemStatus(id);
-    } else {
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === id
-            ? { ...item, status: item.status === "Còn món" ? "Tạm hết món" : "Còn món" }
-            : item
-        )
-      );
+      return;
+    }
+    const target = items.find((x) => x.id === id);
+    const nextLabel = target?.status === "Còn món" ? "Tạm hết món" : "Còn món";
+    const nextDbStatus = nextLabel === "Còn món" ? "available" : "sold_out";
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status: nextLabel } : item)));
+    if (typeof id === "string" && id.includes("-")) {
+      try {
+        await localeatsApi.toggleMerchantMenuItemStatus(id, nextDbStatus);
+        if (onRefresh) onRefresh();
+      } catch {}
     }
   };
 
-  const liveDirections = propLiveDirections || defaultLiveDirections;
+  const dbLiveDirections = [
+    ...(merchantData?.activeNavigations || []).map((n, idx) => ({
+      id: n.sessionId || `nav-${idx}`,
+      time: "Đang di chuyển Live",
+      vehicle: n.mode === "car" ? "Ô tô" : n.mode === "walk" ? "Đi bộ" : "Xe máy",
+      vehicleIcon: n.mode === "car" ? "directions_car" : n.mode === "walk" ? "directions_walk" : "two_wheeler",
+      vehicleColor: n.mode === "car" ? "text-[#DE3618]" : n.mode === "walk" ? "text-[#2C694E]" : "text-[#FD9013]",
+      distance: `${n.distanceMeters || 450}m (${n.visitor || "Thực khách GPS"})`,
+      eta: n.status === "near_store" ? `Đang dừng tại quán (${n.dwellSeconds || 0}s)` : "~4 phút nữa",
+      tableStatus: n.status === "near_store" ? "Đang xác nhận 10p" : "Đang tới quán",
+      statusClass: n.status === "near_store" ? "bg-[#B1F0CE] text-[#002114]" : "bg-[#FEEADC] text-[#231A11]",
+    })),
+    ...(merchantData?.recentVisits || []).slice(0, 6).map((v, idx) => ({
+      id: v.id || `visit-${idx}`,
+      time: v.arrivedAt ? new Date(v.arrivedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "Vừa đến",
+      vehicle: v.mode === "car" ? "Ô tô" : v.mode === "walk" ? "Đi bộ" : "Xe máy",
+      vehicleIcon: v.mode === "car" ? "directions_car" : v.mode === "walk" ? "directions_walk" : "two_wheeler",
+      vehicleColor: "text-[#2C694E]",
+      distance: `${v.travelDistanceMeters || 1200}m (${v.visitor || "Thực khách GPS"})`,
+      eta: `Đã dừng ${Math.round((v.dwellSeconds || 600) / 60)} phút`,
+      tableStatus: "Đã xác thực GPS >= 10p",
+      statusClass: "bg-[#B1F0CE] text-[#002114]",
+    })),
+  ];
+
+  const liveDirections = propLiveDirections || (dbLiveDirections.length > 0 ? dbLiveDirections : defaultLiveDirections);
   const [chartPeriod, setChartPeriod] = useState("today");
 
   // Flash Sale Modal internal state

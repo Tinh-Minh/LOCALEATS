@@ -28,7 +28,7 @@ function decodePolyline(encoded) {
   return coords;
 }
 
-export default function RouteLayer({ routeData, transportMode, itineraryStops = [] }) {
+export default function RouteLayer({ routeData, transportMode, itineraryStops = [], userLocation, onUserLocationDragEnd }) {
   const [roadGhostCoords, setRoadGhostCoords] = useState(null);
 
   // Fetch đường đi thực tế trên mạng lưới giao thông (uốn lượn theo đường phố) nối từ Trạm 1 -> Trạm 2 -> Trạm 3...
@@ -169,6 +169,7 @@ export default function RouteLayer({ routeData, transportMode, itineraryStops = 
   };
 
   const { origin, destination } = routeData || {};
+  const activeUserPos = (userLocation?.lat && userLocation?.lng) ? userLocation : origin;
 
   return (
     <>
@@ -191,10 +192,23 @@ export default function RouteLayer({ routeData, transportMode, itineraryStops = 
 
       {/* 3. Đánh dấu trạm dừng chân ẩm thực được tích hợp trực tiếp, sạch sẽ trên FoodPin */}
 
-      {/* Origin marker (user location) — BIG blue pulsing dot */}
-      {origin && (
-        <Marker longitude={origin.lng} latitude={origin.lat} anchor="center">
-          <div style={{ width: 60, height: 60, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {/* Origin marker (user location) — BIG blue pulsing dot (co the keo tha tren ban do) */}
+      {activeUserPos && (
+        <Marker
+          longitude={activeUserPos.lng}
+          latitude={activeUserPos.lat}
+          anchor="center"
+          draggable={true}
+          onDragEnd={(e) => {
+            if (onUserLocationDragEnd && e?.lngLat) {
+              onUserLocationDragEnd({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+            }
+          }}
+        >
+          <div
+            title="Kéo thả chấm xanh này tới vị trí thực tế của bạn trên bản đồ"
+            style={{ width: 60, height: 60, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", cursor: "grab" }}
+          >
             {/* Outer ping ring */}
             <span
               style={{

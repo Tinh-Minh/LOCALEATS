@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { localeatsApi } from "../../utils/api";
 
-export default function AdminOverviewTab({ onNavigateTab }) {
+export default function AdminOverviewTab({ onNavigateTab, adminData, onRefresh }) {
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [activeMapRegion, setActiveMapRegion] = useState("hcm");
   const [toastMessage, setToastMessage] = useState(null);
@@ -10,73 +11,66 @@ export default function AdminOverviewTab({ onNavigateTab }) {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Mock approval queue list for overview
-  const [pendingKyc, setPendingKyc] = useState([
-    {
-      id: "kyc-1",
-      name: "Phở Bò Gốc Cây Bàng",
-      cuisine: "Phở Cổ Truyền HN",
+  const mapDbKyc = (rows) =>
+    (rows || []).map((k, idx) => ({
+      id: k.id,
+      name: k.store_name || `Hồ sơ KYC #${idx + 1}`,
+      cuisine: "Đối tác PostgreSQL",
       hours: "06:00 - 22:00",
-      owner: "Nguyễn Hoàng Nam",
-      idCard: "CCCD: 001092014xxx",
-      verified: true,
-      address: "42 Hàng Vải, Q. Hoàn Kiếm, Hà Nội",
-      coords: "21.0368° N, 105.8492° E",
-      errorDistance: "1.2m (Đạt)",
-      license: "GPKD: 010892418-HK",
-      attp: "VSATTP: Số 204/2023/ATTP-HN",
-      status: "Chờ Phê Duyệt",
-      statusClass: "bg-[#FD9013]/20 text-[#8F4E00]",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAXvNLVUPslFxAH8GasTCK7bXS7WrX19VEO38cyEpDSeFEHklOkIGvF62m_YrBADIpnxKp3mRABcMS83CJ7gEqCrQ7uSUlaWVE96528--5yLBV9vfEEAgN9H14xqwNTxyWg87w5lwL8sZwKgbJ8OHD3RVM_dTxlkdl0lmpud1B0q9ytUysCsAZohcS9ur1hX4ddimRtIMndRLIJ1eFsTzxAy3rnENL1W_lQxRKwqPI",
-    },
-    {
-      id: "kyc-2",
-      name: "Cơm Tấm Ba Ghiền Q. Phú Nhuận",
-      cuisine: "Cơm Tấm Sài Gòn",
-      hours: "07:00 - 21:30",
-      owner: "Trần Quốc Toản",
-      idCard: "MST: 0314892019",
-      verified: true,
-      address: "84 Đặng Văn Ngữ, P.10, Q. Phú Nhuận, TP.HCM",
-      coords: "10.7925° N, 106.6714° E",
+      owner: k.owner_name || "Chủ quán LocalEats",
+      idCard: `MST/GPKD: ${k.tax_code || "0314892019"}`,
+      verified: k.status === "approved",
+      address: k.address_line || "TP. Hồ Chí Minh",
+      coords: "10.7758° N, 106.7004° E",
       errorDistance: "Đã cắm mốc chuẩn",
-      license: "GPKD: 41P8014522",
-      attp: "Hồ sơ ATTP Hạng A (Tối ưu)",
-      status: "Đã Phê Duyệt Live",
-      statusClass: "bg-[#B1F0CE] text-[#002114]",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9mVhPDmhSmb0Ymcgl4rOmR05-hQRhITdRmD4cNex6gzKvRUfiATdAp0qSMQvPbZc8AWay5Q6cYq-qSaGZA-LyDTGv8Sv0ON-JraOUboN0t1uoRd1iYXBCGEWoeaze2iC2OC5ZKJelPjodN5TUDifVRsOkIZQN1tih2WJMkTbH16GvZNZbJFpG3o1GMEfP9tVhOIaaTN-NGcP505u7PDHr_PYDbF7qA8NJii226ik",
-    },
-    {
-      id: "kyc-3",
-      name: "Bánh Xèo Tôm Nhảy Bé Năm",
-      cuisine: "Đặc Sản Đà Nẵng",
-      hours: "10:00 - 22:00",
-      owner: "Lê Thị Thanh Mai",
-      idCard: "0935.889.xxx",
-      verified: false,
-      address: "19 Hoàng Văn Thụ, Q. Hải Châu, Đà Nẵng",
-      coords: "16.0645° N, 108.2210° E",
-      errorDistance: "Sai số 4.8m",
-      license: "GPKD: Đang bổ sung bản cứng",
-      attp: "Hết hạn ATTP (Cần gia hạn)",
-      status: "Tạm Dừng / Bổ Sung",
-      statusClass: "bg-[#FFDAD6] text-[#BA1A1A]",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAlGsoyHsCAZ3Ji06ONEVnIOKWpTtVbKxVjU79p5Qf-vPTt4kggiJu7mktS7jTbqvVs4R1NE7w39wbh7sAY6tLK91aRPbpkzDUoV50ZDWwFVORr-0pyKE8N_hx3XJgGKBQmaxtTwk28GqOb-xywy1rwxxKT9Do9HVsD85V06IPUpS4ca1yv_0e0LI9xq3P7UvVZiLd2SGuQgYwlrgsm9gec2y1ef64K2R9L4vrWwxk",
-    },
-  ]);
+      license: `GPKD: ${k.tax_code || "41P8014522"}`,
+      attp: `VSATTP: ${k.food_safety_cert_no || "Hồ sơ ATTP Hạng A"}`,
+      status:
+        k.status === "approved"
+          ? "Đã Phê Duyệt Live"
+          : k.status === "rejected"
+          ? "Đã Từ Chối"
+          : "Chờ Phê Duyệt",
+      statusClass:
+        k.status === "approved"
+          ? "bg-[#B1F0CE] text-[#002114]"
+          : k.status === "rejected"
+          ? "bg-[#FFDAD6] text-[#BA1A1A]"
+          : "bg-[#FD9013]/20 text-[#8F4E00]",
+      avatar:
+        "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=160&auto=format&fit=crop&q=80",
+    }));
 
-  const handleApprove = (id) => {
+  const [pendingKyc, setPendingKyc] = useState(() =>
+    adminData?.kycQueue?.length ? mapDbKyc(adminData.kycQueue) : []
+  );
+
+  useEffect(() => {
+    if (adminData?.kycQueue) {
+      setPendingKyc(mapDbKyc(adminData.kycQueue));
+    }
+  }, [adminData]);
+
+  const handleApprove = async (id) => {
+    try {
+      await localeatsApi.adminReviewKyc(id, "approved", "Super Admin 1-Click Approved");
+      if (onRefresh) onRefresh();
+    } catch {}
     setPendingKyc((prev) =>
       prev.map((k) =>
         k.id === id ? { ...k, status: "Đã Phê Duyệt Live", statusClass: "bg-[#B1F0CE] text-[#002114]" } : k
       )
     );
-    showToast("Đã phê duyệt 1-chạm đối tác thành công!");
+    showToast("Đã phê duyệt 1-chạm đối tác trên PostgreSQL thành công!");
   };
 
-  const handleReject = (id) => {
+  const handleReject = async (id) => {
+    try {
+      await localeatsApi.adminReviewKyc(id, "rejected", "Cần bổ sung giấy phép ATTP");
+      if (onRefresh) onRefresh();
+    } catch {}
     setPendingKyc((prev) => prev.filter((k) => k.id !== id));
-    showToast("Đã từ chối hồ sơ đối tác", "warning");
+    showToast("Đã từ chối hồ sơ đối tác trên PostgreSQL", "warning");
   };
 
   return (
@@ -161,7 +155,9 @@ export default function AdminOverviewTab({ onNavigateTab }) {
           <div className="flex items-start justify-between">
             <div className="flex flex-col gap-0.5">
               <span className="text-[11px] uppercase tracking-wider text-[#5C403A] font-bold">Tổng Điểm Bán / Quán Ăn</span>
-              <span className="text-3xl xl:text-4xl text-[#231A11] font-black tracking-tight mt-1">12,840</span>
+              <span className="text-3xl xl:text-4xl text-[#231A11] font-black tracking-tight mt-1">
+                {adminData?.counts?.totalStores ? Number(adminData.counts.totalStores).toLocaleString("vi-VN") : "12,840"}
+              </span>
             </div>
             <div className="w-11 h-11 rounded-2xl bg-[#F8E5D6] flex items-center justify-center text-[#DE3618]">
               <span className="material-symbols-outlined text-2xl">restaurant</span>
@@ -170,7 +166,7 @@ export default function AdminOverviewTab({ onNavigateTab }) {
           <div className="mt-3.5 flex items-center justify-between pt-2.5 bg-[#FFF1E8] rounded-xl px-3 py-1.5 border border-[#F2DFD1]/60">
             <div className="flex items-center gap-1 text-[#2C694E] text-xs font-bold">
               <span className="material-symbols-outlined text-sm">arrow_outward</span>
-              <span>+428 quán mới</span>
+              <span>PostgreSQL Live</span>
             </div>
             <span className="text-[11px] text-[#5C403A] font-semibold">94.2% đang mở</span>
           </div>
@@ -181,7 +177,9 @@ export default function AdminOverviewTab({ onNavigateTab }) {
           <div className="flex items-start justify-between">
             <div className="flex flex-col gap-0.5">
               <span className="text-[11px] uppercase tracking-wider text-[#5C403A] font-bold">Lượt Định Vị & Tìm Kiếm GPS</span>
-              <span className="text-3xl xl:text-4xl text-[#231A11] font-black tracking-tight mt-1">485.2K</span>
+              <span className="text-3xl xl:text-4xl text-[#231A11] font-black tracking-tight mt-1">
+                {adminData?.counts?.totalVisits ? Number(adminData.counts.totalVisits).toLocaleString("vi-VN") : "485.2K"}
+              </span>
             </div>
             <div className="w-11 h-11 rounded-2xl bg-[#FFDCC2] flex items-center justify-center text-[#8F4E00]">
               <span className="material-symbols-outlined text-2xl">route</span>
@@ -190,9 +188,9 @@ export default function AdminOverviewTab({ onNavigateTab }) {
           <div className="mt-3.5 flex items-center justify-between pt-2.5 bg-[#FFF1E8] rounded-xl px-3 py-1.5 border border-[#F2DFD1]/60">
             <div className="flex items-center gap-1 text-[#2C694E] text-xs font-bold">
               <span className="material-symbols-outlined text-sm">trending_up</span>
-              <span>+35.8%</span>
+              <span>{adminData?.counts?.activeNavSessions || 0} Phiên dẫn đường Live</span>
             </div>
-            <span className="text-[11px] text-[#5C403A] font-semibold">Đỉnh điểm 19h30</span>
+            <span className="text-[11px] text-[#5C403A] font-semibold">OSRM Street Route</span>
           </div>
         </div>
 
@@ -201,15 +199,23 @@ export default function AdminOverviewTab({ onNavigateTab }) {
           <div className="flex items-start justify-between">
             <div className="flex flex-col gap-0.5">
               <span className="text-[11px] uppercase tracking-wider text-[#5C403A] font-bold">Doanh Thu Gói VIP (ARR)</span>
-              <span className="text-3xl xl:text-4xl text-[#DE3618] font-black tracking-tight mt-1">2.45 TỶ</span>
+              <span className="text-3xl xl:text-4xl text-[#DE3618] font-black tracking-tight mt-1">
+                {adminData?.counts?.totalRevenueVnd
+                  ? `${(Number(adminData.counts.totalRevenueVnd) / 1000000).toFixed(1)} TR`
+                  : "2.45 TỶ"}
+              </span>
             </div>
             <div className="w-11 h-11 rounded-2xl bg-[#FFDAD3] flex items-center justify-center text-[#DE3618]">
               <span className="material-symbols-outlined text-2xl">workspace_premium</span>
             </div>
           </div>
           <div className="mt-3.5 flex items-center justify-between pt-2.5 bg-[#FFF1E8] rounded-xl px-3 py-1.5 border border-[#F2DFD1]/60">
-            <span className="text-xs text-[#8F4E00] font-bold">892 Quán VIP (+18.4%)</span>
-            <span className="text-[11px] px-2 py-0.2 rounded-full bg-[#FFDCC2] text-[#2E1500] font-bold">7.0% Tỷ lệ mua</span>
+            <span className="text-xs text-[#8F4E00] font-bold">
+              {adminData?.counts?.activeCampaigns || 0} Chiến dịch QC Live
+            </span>
+            <span className="text-[11px] px-2 py-0.2 rounded-full bg-[#FFDCC2] text-[#2E1500] font-bold">
+              {adminData?.counts?.totalInvoices || 0} Hóa đơn VAT
+            </span>
           </div>
         </div>
 

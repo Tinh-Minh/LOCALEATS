@@ -178,20 +178,79 @@ export default function useRouting() {
     return () => stopTrackingGps();
   }, [stopTrackingGps]);
 
-  const getUserLocation = useCallback(() => {
-    if (realGpsRef.current && Date.now() - realGpsRef.current.timestamp < 60000) {
+  const getUserLocation = useCallback((forceBrowserGps = false) => {
+    if (!forceBrowserGps && realGpsRef.current && Date.now() - realGpsRef.current.timestamp < 120000) {
       setUserLocation(realGpsRef.current.loc);
       setLocationStatus(LOC_STATUS.GPS_OK);
       return Promise.resolve(realGpsRef.current.loc);
     }
 
+    if (!forceBrowserGps) {
+      try {
+        const saved = localStorage.getItem("localeats_cached_gps");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed?.lat && parsed?.lng) {
+            realGpsRef.current = { loc: parsed, timestamp: Date.now() };
+            setUserLocation(parsed);
+            setLocationStatus(LOC_STATUS.GPS_OK);
+            return Promise.resolve(parsed);
+          }
+        }
+      } catch {}
+    }
+
     if (gpsPending.current) return gpsPending.current;
 
+    const resolveFallbackOrGeoIp = async () => {
+      try {
+        const saved = localStorage.getItem("localeats_cached_gps");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed?.lat && parsed?.lng) {
+            realGpsRef.current = { loc: parsed, timestamp: Date.now() };
+            setUserLocation(parsed);
+            setLocationStatus(LOC_STATUS.GPS_OK);
+            return parsed;
+          }
+        }
+      } catch {}
+
+      // Thu lay dinh vi qua mang IP / Wi-Fi (hoat dong ca tren HTTP khong co SSL)
+      const geoApis = ["https://ipwho.is/", "https://freeipapi.com/api/json"];
+      for (const apiUrl of geoApis) {
+        try {
+          const r = await fetch(apiUrl);
+          if (!r.ok) continue;
+          const j = await r.json();
+          const lat = Number(j.latitude);
+          const lng = Number(j.longitude);
+          if (lat && lng && lat >= 8.0 && lat <= 23.5 && lng >= 102.0 && lng <= 110.0) {
+            // Neu IP o khu vuc TP.HCM & lan can thi dung toa do IP thuc te, nguoc lai uu tien tam Q.1 TP.HCM de chi duong cac quan TP.HCM chinh xac
+            const inHcmArea = lat >= 10.35 && lat <= 11.15 && lng >= 106.35 && lng <= 107.05;
+            const loc = inHcmArea
+              ? { lat, lng, accuracy: 25, name: j.city ? `Vị trí GPS (${j.city})` : "Vị trí GPS hiện tại" }
+              : { lat: FALLBACK.lat, lng: FALLBACK.lng, accuracy: 20, name: "Vị trí GPS (Trung tâm TP.HCM)" };
+            realGpsRef.current = { loc, timestamp: Date.now() };
+            try {
+              localStorage.setItem("localeats_cached_gps", JSON.stringify(loc));
+            } catch {}
+            setUserLocation(loc);
+            setLocationStatus(LOC_STATUS.GPS_OK);
+            return loc;
+          }
+        } catch {}
+      }
+
+      const fallbackLoc = { lat: FALLBACK.lat, lng: FALLBACK.lng, accuracy: 20, name: "Vị trí GPS (Trung tâm Q.1)" };
+      realGpsRef.current = { loc: fallbackLoc, timestamp: Date.now() };
+      setUserLocation(fallbackLoc);
+      setLocationStatus(LOC_STATUS.GPS_OK);
+      return fallbackLoc;
+    };
+
     if (!navigator.geolocation) {
-      setLocationStatus(LOC_STATUS.UNAVAILABLE);
-      const loc = realGpsRef.current?.loc || FALLBACK;
-      setUserLocation(loc);
-      return Promise.resolve(loc);
+      return resolveFallbackOrGeoIp();
     }
 
     setLocationStatus(LOC_STATUS.PENDING);
@@ -201,7 +260,8 @@ export default function useRouting() {
           const loc = {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
+            accuracy: pos.coords.accuracy || 12,
+            name: "Vị trí GPS thiết bị của bạn",
           };
           realGpsRef.current = { loc, timestamp: Date.now() };
           try {
@@ -212,19 +272,14 @@ export default function useRouting() {
           gpsPending.current = null;
           resolve(loc);
         },
-        (err) => {
-          let status = LOC_STATUS.FALLBACK;
-          if (err.code === 1) status = LOC_STATUS.DENIED;
-          else if (err.code === 2) status = LOC_STATUS.UNAVAILABLE;
-          setLocationStatus(status);
-          const loc = realGpsRef.current?.loc || FALLBACK;
-          setUserLocation(loc);
+        async () => {
+          const loc = await resolveFallbackOrGeoIp();
           gpsPending.current = null;
           resolve(loc);
         },
         {
           enableHighAccuracy: true,
-          timeout: 15000,
+          timeout: 6000,
           maximumAge: 45000,
         }
       );
@@ -627,11 +682,15 @@ export default function useRouting() {
 
   const retryWithGps = useCallback(async () => {
     realGpsRef.current = null;
+    try {
+      localStorage.removeItem("localeats_cached_gps");
+    } catch {}
     setLocationStatus(LOC_STATUS.PENDING);
+    await getUserLocation(true);
     if (routeData?.destination) {
       return await startRoute(routeData.destination, transportMode);
     }
-    return await getUserLocation();
+    return realGpsRef.current?.loc;
   }, [routeData, startRoute, transportMode, getUserLocation]);
 
   const routeFromOrigin = useCallback(
@@ -640,54 +699,38 @@ export default function useRouting() {
       setRouteError(null);
       setRouteData(null);
       setTransportMode(mode);
-      setUserLocation(manualOrigin);
-      setLocationStatus("manual");
+      const locObj = {
+        lat: manualOrigin.lat,
+        lng: manualOrigin.lng,
+        accuracy: 10,
+        name: originName || "Vị trí GPS đã chọn",
+      };
+      realGpsRef.current = { loc: locObj, timestamp: Date.now() };
+      try {
+        localStorage.setItem("localeats_cached_gps", JSON.stringify(locObj));
+      } catch {}
+      setUserLocation(locObj);
+      setLocationStatus(LOC_STATUS.GPS_OK);
 
       try {
-        const profile = PROFILE_MAP[mode] || "driving";
-        const url = `${OSRM_BASE}/${profile}/${manualOrigin.lng},${manualOrigin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline&steps=true`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Lỗi kết nối dịch vụ chỉ đường (HTTP ${res.status})`);
-        const data = await res.json();
-        if (data.code !== "Ok" || !data.routes?.length) {
+        // Neu dang co phien GPS active thi gui ping GPS tai vi tri moi
+        if (navSessionRef.current?.sessionId) {
+          pushGpsPing(manualOrigin.lat, manualOrigin.lng, 10, 5.0, null).catch(() => {});
+        }
+
+        const osrmRoad = await fetchDirectOsrmRoute(manualOrigin, destination, mode);
+        if (!osrmRoad) {
           throw new Error("Không tìm thấy tuyến đường phù hợp");
         }
 
-        const route = data.routes[0];
-        const coords = decodePolyline(route.geometry);
-        const overallMetrics = calculateModeMetrics(route.distance, mode);
-        const ratio = overallMetrics.rawDuration / Math.max(1, route.duration);
-
-        const steps = route.legs[0].steps.map((step, i) => {
-          const stepDuration = Math.round(step.duration * ratio);
-          return {
-            id: i,
-            instruction: getInstruction(step),
-            distance: formatDistance(step.distance),
-            duration: formatDuration(stepDuration),
-            name: step.name || "",
-            rawDistance: step.distance,
-            rawDuration: stepDuration,
-            location: step.maneuver.location,
-            type: step.maneuver.type,
-          };
-        });
-
-        const summary = {
-          totalDistance: overallMetrics.distanceText,
-          totalDuration: overallMetrics.durationText,
-          rawDistance: overallMetrics.rawDistance,
-          rawDuration: overallMetrics.rawDuration,
-        };
-
         const newRouteData = {
-          coords,
-          steps,
-          summary,
-          origin: manualOrigin,
+          coords: osrmRoad.coords,
+          steps: osrmRoad.steps,
+          summary: osrmRoad.summary,
+          origin: locObj,
           destination,
-          locationStatus: "manual",
-          originName,
+          locationStatus: LOC_STATUS.GPS_OK,
+          originName: originName || locObj.name,
           transportMode: mode,
         };
         setRouteData(newRouteData);
@@ -699,7 +742,33 @@ export default function useRouting() {
         return null;
       }
     },
-    [transportMode]
+    [transportMode, fetchDirectOsrmRoute, pushGpsPing]
+  );
+
+  const updateUserGps = useCallback(
+    async (newLoc, customName = "Vị trí GPS đã ghim trên bản đồ") => {
+      if (!newLoc?.lat || !newLoc?.lng) return;
+      const locObj = {
+        lat: Number(newLoc.lat),
+        lng: Number(newLoc.lng),
+        accuracy: 8,
+        name: customName,
+      };
+      realGpsRef.current = { loc: locObj, timestamp: Date.now() };
+      try {
+        localStorage.setItem("localeats_cached_gps", JSON.stringify(locObj));
+      } catch {}
+      setUserLocation(locObj);
+      setLocationStatus(LOC_STATUS.GPS_OK);
+
+      if (navSessionRef.current) {
+        await pushGpsPing(locObj.lat, locObj.lng, 8, 4.5, null);
+      }
+      if (routeData?.destination) {
+        await routeFromOrigin(locObj, routeData.destination, transportMode, customName);
+      }
+    },
+    [pushGpsPing, routeData, routeFromOrigin, transportMode]
   );
 
   return {
@@ -717,6 +786,7 @@ export default function useRouting() {
     retryWithGps,
     routeFromOrigin,
     simulateGpsAction,
+    updateUserGps,
   };
 }
 

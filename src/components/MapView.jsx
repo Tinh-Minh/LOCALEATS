@@ -14,7 +14,7 @@ setWorkerUrl(workerUrl);
 const MAP_STYLE_3D = "https://tiles.openfreemap.org/styles/liberty";
 
 const MapView = forwardRef(function MapView(
-  { places, selectedId, onSelect, onMapClick, routeData, transportMode, userLocation, itineraryStops = [] },
+  { places, selectedId, onSelect, onMapClick, routeData, transportMode, userLocation, onUserLocationDragEnd, itineraryStops = [] },
   ref
 ) {
   const mapRef = useRef(null);
@@ -389,12 +389,27 @@ const MapView = forwardRef(function MapView(
           routeData={routeData}
           transportMode={transportMode}
           itineraryStops={itineraryStops}
+          userLocation={userLocation}
+          onUserLocationDragEnd={onUserLocationDragEnd}
         />
 
-        {/* User GPS location marker when no route is active */}
+        {/* User GPS location marker when no route is active (co the keo tha tren ban do) */}
         {!routeData && userLocation && (
-          <Marker longitude={userLocation.lng} latitude={userLocation.lat} anchor="center">
-            <div className="relative flex items-center justify-center w-10 h-10">
+          <Marker
+            longitude={userLocation.lng}
+            latitude={userLocation.lat}
+            anchor="center"
+            draggable={true}
+            onDragEnd={(e) => {
+              if (onUserLocationDragEnd && e?.lngLat) {
+                onUserLocationDragEnd({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+              }
+            }}
+          >
+            <div
+              title="Kéo thả chấm xanh này tới vị trí thực tế của bạn"
+              className="relative flex items-center justify-center w-10 h-10 cursor-grab active:cursor-grabbing"
+            >
               <span className="absolute w-8 h-8 rounded-full bg-blue-500/25 animate-ping" />
               <span className="absolute w-6 h-6 rounded-full bg-blue-500/40 animate-pulse" />
               <div className="relative z-10 w-4 h-4 rounded-full bg-white border-3 border-blue-600 shadow-md flex items-center justify-center">

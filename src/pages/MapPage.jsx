@@ -31,6 +31,7 @@ export default function MapPage() {
     retryWithGps,
     routeFromOrigin,
     simulateGpsAction,
+    updateUserGps,
   } = useRouting();
 
   // Dong bo danh sach quan tu PostgreSQL VPS (ket hop voi danh sach tinh de luon day du)
@@ -285,6 +286,7 @@ export default function MapPage() {
           routeData={routeData}
           transportMode={transportMode}
           userLocation={userLocation}
+          onUserLocationDragEnd={updateUserGps}
           itineraryStops={itineraryStops}
         />
       </div>

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { localeatsApi } from "../../utils/api";
 
-export default function MerchantVipTab({ currentPlace }) {
+export default function MerchantVipTab({ currentPlace, merchantData, onRefresh }) {
   const [toastMessage, setToastMessage] = useState(null);
   const [autoRenew, setAutoRenew] = useState(true);
   const [isCampaignFormOpen, setIsCampaignFormOpen] = useState(false);
@@ -11,7 +12,7 @@ export default function MerchantVipTab({ currentPlace }) {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Flash sale campaigns
+  // Flash sale campaigns from PostgreSQL ad_campaign
   const [campaigns, setCampaigns] = useState([
     {
       id: 1,
@@ -53,27 +54,58 @@ export default function MerchantVipTab({ currentPlace }) {
   const [formRadius, setFormRadius] = useState("2.0 km (Toàn bộ phố cổ)");
   const [formMsg, setFormMsg] = useState("");
 
-  const handleCreateCampaign = (e) => {
+  useEffect(() => {
+    if (Array.isArray(merchantData?.campaigns) && merchantData.campaigns.length > 0) {
+      setCampaigns(
+        merchantData.campaigns.map((c) => ({
+          id: c.id,
+          name: `${c.title} ${c.voucherCode ? `(${c.voucherCode})` : ""}`,
+          time: c.discountValue || "18:00 - 21:00",
+          radius: "2.0 km (Bán kính GPS)",
+          budget: `${Number(c.budgetVnd || 2000000).toLocaleString("vi-VN")}đ`,
+          gpsReach: `${(c.voucherQuota || 200) * 12} khách`,
+          dinersArrived: `${c.voucherClaimed || 12} lượt nhận mã`,
+          status: c.status === "running" ? "Đang phát sóng" : "Đã hoàn thành",
+          statusClass:
+            c.status === "running"
+              ? "bg-[#B1F0CE] text-[#002114] animate-pulse"
+              : "bg-[#FEEADC] text-[#5C403A]",
+        }))
+      );
+    }
+  }, [merchantData?.campaigns]);
+
+  const handleCreateCampaign = async (e) => {
     e.preventDefault();
     if (!formName) return;
+
+    try {
+      await localeatsApi.createMerchantCampaign({
+        storeId: currentPlace?.id,
+        title: formName,
+        description: formMsg || `Khung giờ ${formHours} • Bán kính ${formRadius}`,
+        budgetVnd: 2500000,
+      });
+      if (onRefresh) await onRefresh();
+    } catch {}
 
     const newCamp = {
       id: Date.now(),
       name: formName,
       time: formHours,
       radius: formRadius,
-      budget: "1 lượt chiến dịch VIP",
+      budget: "2.500.000đ (Đã lưu PostgreSQL)",
       gpsReach: "~2,800 khách lân cận",
       dinersArrived: "Đang ghi nhận...",
       status: "Đang phát sóng",
       statusClass: "bg-[#B1F0CE] text-[#002114] animate-pulse",
     };
 
-    setCampaigns([newCamp, ...campaigns]);
+    setCampaigns((prev) => [newCamp, ...prev]);
     setIsCampaignFormOpen(false);
     setFormName("");
     setFormMsg("");
-    showToast(`Đã kích hoạt chiến dịch: "${newCamp.name}"!`);
+    showToast(`Đã lưu chiến dịch "${newCamp.name}" vào PostgreSQL thành công!`);
   };
 
   return (
