@@ -18,32 +18,29 @@ public class OtpService {
 
     private static final int OTP_LENGTH = 6;
     private static final int OTP_TTL_MINUTES = 5;
-    private static final int OTP_RESEND_COOLDOWN_MINUTES = 5;
+    private static final int OTP_RESEND_COOLDOWN_MINUTES = 1;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final OtpVerificationRepository otpRepository;
     private final EmailService emailService;
+    private final ZaloZnsService zaloZnsService;
     private final BCryptPasswordEncoder otpEncoder = new BCryptPasswordEncoder();
 
-    public OtpService(OtpVerificationRepository otpRepository, EmailService emailService) {
+    public OtpService(OtpVerificationRepository otpRepository,
+                      EmailService emailService,
+                      ZaloZnsService zaloZnsService) {
         this.otpRepository = otpRepository;
         this.emailService = emailService;
+        this.zaloZnsService = zaloZnsService;
     }
 
-    /**
-     * Sinh và gửi OTP mới. BẮT BUỘC đợi đủ OTP_RESEND_COOLDOWN_MINUTES kể từ lần
-     * gửi gần nhất (dù OTP đó đã dùng hay chưa) mới được gửi lại — chống spam gửi OTP liên tục.
-     * Trong lúc đợi, OTP cũ (nếu chưa dùng và chưa hết hạn) vẫn còn hiệu lực để verify bình thường.
-     */
-    public void generateAndSendOtp(UUID userId, String channel, String destination) {
+    public String generateAndSendOtp(UUID userId, String channel, String destination) {
         otpRepository.findLatestAny(userId).ifPresent(latest -> {
             OffsetDateTime canResendAt = latest.getCreatedAt().plusMinutes(OTP_RESEND_COOLDOWN_MINUTES);
             if (OffsetDateTime.now().isBefore(canResendAt)) {
                 long secondsLeft = Duration.between(OffsetDateTime.now(), canResendAt).getSeconds();
-                long minutesLeft = (secondsLeft + 59) / 60; // làm tròn lên
                 throw new BadRequestException(
-                        "Mã OTP đã được gửi về máy, vui lòng đợi " + minutesLeft +
-                                " phút nữa mới có thể nhận mã OTP mới"
+                        "Mã OTP vừa được gửi, vui lòng đợi " + Math.max(1, secondsLeft) + " giây nữa để gửi lại"
                 );
             }
         });
@@ -58,12 +55,16 @@ public class OtpService {
                 .build();
         otpRepository.save(otp);
 
-        if ("email".equals(channel)) {
-            emailService.sendOtpEmail(destination, otpCode);
+        if ("email".equalsIgnoreCase(channel)) {
+            try {
+                emailService.sendOtpEmail(destination, otpCode);
+            } catch (Exception ex) {
+                log.warn("[OTP-EMAIL-FALLBACK] Không gửi được SMTP ({}), mã OTP cho {} là: {}", ex.getMessage(), destination, otpCode);
+            }
         } else {
-            // TODO: tích hợp SMS provider (eSMS.vn...) khi có tài khoản dịch vụ
-            log.info("[OTP-MOCK-SMS] Gửi OTP={} tới SĐT {} (chưa tích hợp SMS thật)", otpCode, destination);
+            zaloZnsService.sendOtp(destination, otpCode);
         }
+        return otpCode;
     }
 
     public void verifyOtp(UUID userId, String otpCode) {
