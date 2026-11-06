@@ -32,8 +32,8 @@ public class AdminPortalService {
         Integer totalReviews = jdbc.queryForObject("SELECT count(*) FROM review", Map.of(), Integer.class);
         Integer activeCampaigns = jdbc.queryForObject("SELECT count(*) FROM ad_campaign WHERE status = 'running'::ad_campaign_status", Map.of(), Integer.class);
         Integer totalInvoices = jdbc.queryForObject("SELECT count(*) FROM invoice", Map.of(), Integer.class);
-        Integer activeRoutingNodes = jdbc.queryForObject("SELECT count(*) FROM routing_node WHERE status = 'healthy'::node_health_status", Map.of(), Integer.class);
-        Long totalRevenueVnd = jdbc.queryForObject("SELECT COALESCE(SUM(amount), 0)::bigint FROM payment_transaction WHERE status = 'paid'::payment_status", Map.of(), Long.class);
+        Integer activeRoutingNodes = jdbc.queryForObject("SELECT count(*) FROM routing_node WHERE status::text = 'healthy'", Map.of(), Integer.class);
+        Long totalRevenueVnd = jdbc.queryForObject("SELECT COALESCE(SUM(amount), 0)::bigint FROM payment_transaction WHERE status::text = 'paid'", Map.of(), Long.class);
 
         List<Map<String, Object>> stores = jdbc.queryForList("""
                 SELECT s.id, s.name, s.address, s.address AS address_line, s.district, s.specialty, s.status,
@@ -376,7 +376,7 @@ public class AdminPortalService {
         String st = String.valueOf(body.getOrDefault("status", "healthy"));
         if ("maintenance".equals(st)) st = "degraded";
         if (!List.of("healthy", "degraded", "down").contains(st)) st = "healthy";
-        jdbc.update("UPDATE routing_node SET status = CAST(:st AS node_health_status), last_health_at = now() WHERE id = :id",
+        jdbc.update("UPDATE routing_node SET status = :st, last_health_at = now() WHERE id = :id",
                 Map.of("st", st, "id", id));
         logAudit("routing_node." + st, "routing_node", id);
         return st;

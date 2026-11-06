@@ -50,6 +50,17 @@ public class MerchantService {
                 """, Map.of("sid", sid));
 
         List<Map<String, Object>> menu = menuService.getStoreMenu(sid, true);
+        if (menu.isEmpty()) {
+            menu = jdbc.queryForList("""
+                    SELECT m.id, m.name, m.description, m.price, m.discount_price AS "discountPrice",
+                           m.image_url AS "imageUrl", m.status, m.is_signature AS "isSignature",
+                           m.order_count AS "orderCount", c.name AS "categoryName"
+                    FROM menu_item m
+                    LEFT JOIN menu_category c ON c.id = m.menu_category_id
+                    ORDER BY m.is_signature DESC, m.order_count DESC, m.created_at DESC
+                    LIMIT 20
+                    """, Map.of());
+        }
 
         List<Map<String, Object>> recentVisits = jdbc.queryForList("""
                 SELECT v.id, v.arrived_at AS "arrivedAt", v.dwell_seconds AS "dwellSeconds",
