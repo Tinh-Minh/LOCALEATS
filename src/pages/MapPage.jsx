@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { places, filterChips } from "../data/places";
+import { places as initialPlaces, filterChips } from "../data/places";
+import { localeatsApi } from "../utils/api";
 import MapView from "../components/MapView";
 import PlacePopup from "../components/PlacePopup";
 import DirectionsPanel from "../components/DirectionsPanel";
@@ -10,6 +11,7 @@ export default function MapPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const mapRef = useRef(null);
+  const [places, setPlaces] = useState(initialPlaces);
   const [selectedId, setSelectedId] = useState(null);
   const [activeFilter, setActiveFilter] = useState("hot");
   const [showLegend, setShowLegend] = useState(false);
@@ -22,12 +24,34 @@ export default function MapPage() {
     transportMode,
     userLocation,
     locationStatus,
+    navSession,
     startRoute,
     clearRoute,
     switchMode,
     retryWithGps,
     routeFromOrigin,
+    simulateGpsAction,
   } = useRouting();
+
+  // Dong bo danh sach quan tu PostgreSQL VPS (ket hop voi danh sach tinh de luon day du)
+  useEffect(() => {
+    let cancelled = false;
+    localeatsApi
+      .getStores({
+        lat: userLocation?.lat,
+        lng: userLocation?.lng,
+        limit: 250,
+      })
+      .then((dbStores) => {
+        if (!cancelled && Array.isArray(dbStores) && dbStores.length > 0) {
+          setPlaces([...dbStores, ...initialPlaces]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [userLocation?.lat, userLocation?.lng]);
 
   const [itineraryStops, setItineraryStops] = useState([]);
 
@@ -289,11 +313,13 @@ export default function MapPage() {
               routeError={routeError}
               transportMode={transportMode}
               locationStatus={locationStatus}
+              navSession={navSession}
+              onSimulateGps={simulateGpsAction}
               onSwitchMode={switchMode}
               onRetryGps={retryWithGps}
               onRouteFromOrigin={routeFromOrigin}
               onStartRoute={handleStartRoute}
-              destination={place ? { lat: place.lat, lng: place.lng } : null}
+              destination={place ? { id: place.id, storeId: place.storeId || place.id, lat: place.lat, lng: place.lng } : null}
               onClose={itineraryStops && itineraryStops.length > 1 ? handleCancelItinerary : handleCloseDirections}
               onCancelItinerary={handleCancelItinerary}
               isItineraryTour={Boolean(itineraryStops && itineraryStops.length > 1)}

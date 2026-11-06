@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { places } from "../data/places";
+import { apiFetch } from "../utils/api";
 
 // Import 7 High-Fidelity Stitch Merchant Tabs
 import MerchantOverviewTab from "./merchant/MerchantOverviewTab";
@@ -17,10 +18,34 @@ export default function MerchantDashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(true);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [merchantData, setMerchantData] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    apiFetch("/api/merchant/overview")
+      .then((data) => {
+        if (mounted && data) setMerchantData(data);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const currentPlace = useMemo(() => {
-    return places.find((p) => p.id === selectedPlaceId) || places[0];
-  }, [selectedPlaceId]);
+    const base = places.find((p) => p.id === selectedPlaceId) || places[0];
+    if (merchantData?.store) {
+      return {
+        ...base,
+        ...merchantData.store,
+        district: merchantData.store.address || base.district,
+        merchantStats: merchantData.stats,
+        recentVisits: merchantData.recentVisits,
+        activeNavigations: merchantData.activeNavigations,
+      };
+    }
+    return base;
+  }, [selectedPlaceId, merchantData]);
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },

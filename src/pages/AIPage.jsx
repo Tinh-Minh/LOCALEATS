@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { aiDishes } from "../data/places";
+import { aiDishes as initialAiDishes } from "../data/places";
+import { localeatsApi } from "../utils/api";
 
 const moodCategories = [
   { id: "hot_broth", label: "Nước lèo nóng hổi", icon: "soup_kitchen", desc: "Phở, bún bò, hủ tiếu hầm xương" },
@@ -39,9 +40,10 @@ export default function AIPage() {
   const [selectedDistance, setSelectedDistance] = useState("dist_3");
   const [activeTags, setActiveTags] = useState(["Cay nồng ấm bụng", "Trời mưa lạnh"]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [aiDishes, setAiDishes] = useState(initialAiDishes);
 
   // Vòng quay may mắn / bốc quẻ ngẫu nhiên
-  const [luckyDish, setLuckyDish] = useState(aiDishes[0]);
+  const [luckyDish, setLuckyDish] = useState(initialAiDishes[0]);
   const [isSpinning, setIsSpinning] = useState(false);
 
   const toggleTag = (tag) => {
@@ -50,11 +52,34 @@ export default function AIPage() {
     );
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-    }, 600);
+    try {
+      const res = await localeatsApi.aiRecommend({
+        prompt: promptText,
+        mood: selectedMood,
+        budget: selectedBudget,
+        distance: selectedDistance,
+      });
+      if (res?.recommendations?.length) {
+        const mapped = res.recommendations.map((d, idx) => ({
+          id: d.dishId || `ai-${idx}`,
+          storeId: d.storeId,
+          name: d.dishName,
+          place: d.storeName,
+          price: d.priceText || "55.000đ",
+          distance: `${d.distanceKm || 1.2} km`,
+          rating: d.rating || 4.8,
+          match: d.matchScore || "98%",
+          reason: d.aiReason || "Phù hợp khẩu vị & vị trí GPS của bạn",
+          image: d.imageUrl || initialAiDishes[idx % initialAiDishes.length]?.image,
+          lat: d.lat,
+          lng: d.lng,
+        }));
+        setAiDishes([...mapped, ...initialAiDishes]);
+      }
+    } catch {}
+    setIsGenerating(false);
   };
 
   const handleLuckySpin = () => {

@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { places } from "../data/places";
 import { resolveDestinationCoords } from "../utils/destinationResolver";
+import { localeatsApi } from "../utils/api";
 
 // Các mẫu hành trình Food Tour mẫu được yêu thích
 const sampleItineraries = [
@@ -289,6 +290,13 @@ export default function TripPlannerPage() {
     };
 
     try {
+      localeatsApi.saveTrip({
+        title: tripData.title,
+        startPoint,
+        destinationPoint,
+        vehicle,
+        stops: foodStops,
+      }).catch(() => {});
       const existingTrips = JSON.parse(localStorage.getItem("localeats_saved_trips") || "[]");
       existingTrips.unshift(tripData);
       localStorage.setItem("localeats_saved_trips", JSON.stringify(existingTrips));

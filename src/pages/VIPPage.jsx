@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { vipRestaurants } from "../data/places";
+import { vipRestaurants as initialVipRestaurants } from "../data/places";
+import { localeatsApi } from "../utils/api";
 
 const filterCategories = [
   { id: "all", label: "Tất cả đối tác", icon: "stars" },
@@ -15,6 +16,32 @@ export default function VIPPage() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedVoucher, setCopiedVoucher] = useState(null);
+  const [vipRestaurants, setVipRestaurants] = useState(initialVipRestaurants);
+
+  useEffect(() => {
+    localeatsApi
+      .getActiveCampaigns()
+      .then((rows) => {
+        if (Array.isArray(rows) && rows.length > 0) {
+          const mapped = rows.map((c, idx) => ({
+            id: c.storeId || `vip-${idx}`,
+            name: c.storeName,
+            address: c.address || "TP. HCM",
+            category: c.district || "Đối tác VIP",
+            rating: c.rating || 4.8,
+            reviews: 320 + idx * 45,
+            offer: c.title,
+            offerDetail: c.description || "Áp dụng trực tiếp tại bàn cho thành viên LocalEats",
+            voucherCode: c.voucherCode || "LOCALEATS50K",
+            image: c.image || initialVipRestaurants[idx % initialVipRestaurants.length]?.image,
+            lat: 10.850556,
+            lng: 106.771667,
+          }));
+          setVipRestaurants([...mapped, ...initialVipRestaurants]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const copyVoucher = (code) => {
     navigator.clipboard?.writeText(code);

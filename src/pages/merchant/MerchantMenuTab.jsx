@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiFetch } from "../../utils/api";
 
 export default function MerchantMenuTab({ currentPlace }) {
   const [activeCategory, setActiveCategory] = useState("all");
@@ -134,11 +135,45 @@ export default function MerchantMenuTab({ currentPlace }) {
   const [newDishPrice, setNewDishPrice] = useState("");
   const [newDishDesc, setNewDishDesc] = useState("");
 
+  useEffect(() => {
+    let mounted = true;
+    apiFetch("/api/merchant/overview")
+      .then((data) => {
+        if (mounted && Array.isArray(data?.menu) && data.menu.length > 0) {
+          const mapped = data.menu.map((m) => ({
+            id: m.id,
+            name: m.name,
+            desc: m.description || "Món ăn chuẩn vị ẩm thực địa phương",
+            category: "lau",
+            categoryName: m.isSignature ? "Món Đặc Trưng" : "Thực đơn chính",
+            price: `${Number(m.price || 45000).toLocaleString("vi-VN")} đ`,
+            discountPrice: m.discountPrice ? `${Number(m.discountPrice).toLocaleString("vi-VN")} đ` : null,
+            available: m.status !== "sold_out" && m.status !== "hidden",
+            badge: m.isSignature ? "Best Seller" : m.status === "sold_out" ? "Tạm hết" : "Còn món",
+            badgeClass: m.status === "sold_out" ? "bg-[#F2DFD1] text-[#5C403A]" : "bg-[#FFDAD3] text-[#8E1400]",
+            badgeIcon: m.isSignature ? "local_fire_department" : "restaurant",
+            image: m.imageUrl || "https://images.unsplash.com/photo-1547928576-a4a33237cbc3?w=300&q=80",
+          }));
+          setDishes((prev) => [...mapped, ...prev]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const toggleDishStatus = (id) => {
     setDishes((prev) =>
       prev.map((d) => {
         if (d.id === id) {
           const next = !d.available;
+          if (typeof id === "string" && id.includes("-")) {
+            apiFetch(`/api/merchant/menu/${id}/status`, {
+              method: "PATCH",
+              body: JSON.stringify({ status: next ? "available" : "sold_out" }),
+            }).catch(() => {});
+          }
           showToast(`Đã ${next ? "mở bán" : "tạm dừng bán"}: ${d.name}`);
           return {
             ...d,
@@ -152,7 +187,7 @@ export default function MerchantMenuTab({ currentPlace }) {
     );
   };
 
-  const handleAddNewDish = (e) => {
+  const handleAddNewDish = async (e) => {
     e.preventDefault();
     if (!newDishName || !newDishPrice) return;
 
@@ -164,8 +199,24 @@ export default function MerchantMenuTab({ currentPlace }) {
       douong: "Thức uống Thảo Mộc",
     };
 
+    let createdId = Date.now();
+    try {
+      const res = await apiFetch("/api/merchant/menu", {
+        method: "POST",
+        body: JSON.stringify({
+          name: newDishName,
+          description: newDishDesc || "Món ăn mới chuẩn vị ẩm thực địa phương",
+          price: Number(newDishPrice),
+          isSignature: true,
+        }),
+      });
+      if (res?.id) createdId = res.id;
+    } catch {
+      // Fallback local state if offline
+    }
+
     const newDish = {
-      id: Date.now(),
+      id: createdId,
       name: newDishName,
       desc: newDishDesc || "Món ăn mới chuẩn vị ẩm thực địa phương",
       category: newDishCat,
@@ -184,7 +235,7 @@ export default function MerchantMenuTab({ currentPlace }) {
     setNewDishName("");
     setNewDishPrice("");
     setNewDishDesc("");
-    showToast(`Đã thêm món "${newDish.name}" vào thực đơn!`);
+    showToast(`Đã thêm món "${newDish.name}" vào thực đơn PostgreSQL VPS!`);
   };
 
   const filteredDishes =

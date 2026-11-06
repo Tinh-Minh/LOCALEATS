@@ -1,15 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { localeatsApi } from "../utils/api";
 
 const OSRM_BASE = "https://router.project-osrm.org/route/v1";
 
-// Map transport mode to OSRM profile
 const PROFILE_MAP = {
-  bike: "driving", // OSRM free doesn't have "motorcycle", driving is closest
+  bike: "driving",
   car: "driving",
   walk: "foot",
 };
 
-// Location status constants
 const LOC_STATUS = {
   PENDING: "pending",
   GPS_OK: "gps_ok",
@@ -18,9 +17,16 @@ const LOC_STATUS = {
   UNAVAILABLE: "unavailable",
 };
 
-// Vietnamese turn-by-turn instruction mapping
 const MANEUVER_MAP = {
-  turn: { left: "Rẽ trái", right: "Rẽ phải", "sharp left": "Rẽ gấp trái", "sharp right": "Rẽ gấp phải", "slight left": "Rẽ nhẹ trái", "slight right": "Rẽ nhẹ phải", uturn: "Quay đầu" },
+  turn: {
+    left: "Rẽ trái",
+    right: "Rẽ phải",
+    "sharp left": "Rẽ gấp trái",
+    "sharp right": "Rẽ gấp phải",
+    "slight left": "Rẽ nhẹ trái",
+    "slight right": "Rẽ nhẹ phải",
+    uturn: "Quay đầu",
+  },
   "new name": "Tiếp tục đi thẳng",
   depart: "Bắt đầu xuất phát",
   arrive: "Đã đến nơi! 🎉",
@@ -37,7 +43,7 @@ const MANEUVER_MAP = {
 };
 
 function getInstruction(step) {
-  const { type, modifier } = step.maneuver;
+  const { type, modifier } = step.maneuver || {};
   const entry = MANEUVER_MAP[type];
   if (!entry) return `Tiếp tục trên ${step.name || "đường hiện tại"}`;
   if (typeof entry === "string") return entry;
@@ -57,24 +63,17 @@ function formatDuration(seconds) {
   return remainMins > 0 ? `${hrs}h ${remainMins}p` : `${hrs} giờ`;
 }
 
-// Vận tốc thực tế tại đô thị Việt Nam (TP.HCM / Hà Nội):
-// - Xe máy (bike): ~25 km/h (luồn lách hẻm tốt, nhanh nhất trong phố đông)
-// - Ô tô (car): ~18 km/h (dễ kẹt xe, đường một chiều, quay đầu xa hơn)
-// - Đi bộ (walk): ~4.5 - 5 km/h (chậm hơn xe máy khoảng 5 lần)
 function calculateModeMetrics(rawDistanceMeters, mode) {
   let adjustedDistance = rawDistanceMeters;
   let durationSeconds = 0;
 
   if (mode === "walk") {
-    // Đi bộ: vận tốc trung bình 4.8 km/h = 1.33 m/s, có thể đi tắt qua đường nhỏ
     adjustedDistance = rawDistanceMeters * 0.95;
     durationSeconds = Math.round(adjustedDistance / 1.33);
   } else if (mode === "car") {
-    // Ô tô: quãng đường dài hơn do đường 1 chiều, cấm rẽ (~1.12x), vận tốc 18 km/h = 5 m/s
     adjustedDistance = rawDistanceMeters * 1.12;
     durationSeconds = Math.round(adjustedDistance / 5.0);
   } else {
-    // Xe máy (bike): vận tốc 25 km/h = 6.94 m/s, luồn lách linh hoạt
     adjustedDistance = rawDistanceMeters;
     durationSeconds = Math.round(adjustedDistance / 6.94);
   }
@@ -87,19 +86,23 @@ function calculateModeMetrics(rawDistanceMeters, mode) {
   };
 }
 
-// Decode OSRM polyline (Google's encoded polyline format)
 function decodePolyline(encoded) {
+  if (!encoded) return [];
   const coords = [];
-  let index = 0, lat = 0, lng = 0;
+  let index = 0,
+    lat = 0,
+    lng = 0;
 
   while (index < encoded.length) {
-    let b, shift = 0, result = 0;
+    let b,
+      shift = 0,
+      result = 0;
     do {
       b = encoded.charCodeAt(index++) - 63;
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+    lat += result & 1 ? ~(result >> 1) : result >> 1;
 
     shift = 0;
     result = 0;
@@ -108,11 +111,24 @@ function decodePolyline(encoded) {
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    lng += result & 1 ? ~(result >> 1) : result >> 1;
 
     coords.push([lng / 1e5, lat / 1e5]);
   }
   return coords;
+}
+
+function haversineMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
 }
 
 export default function useRouting() {
@@ -132,31 +148,46 @@ export default function useRouting() {
   });
   const [locationStatus, setLocationStatus] = useState(LOC_STATUS.PENDING);
 
-  // Real GPS position tracking (vị trí GPS thực tế được trình duyệt cấp)
+  // Trang thai phien GPS (started -> moving -> near_store -> arrived sau 10 phut dung yen)
+  const [navSession, setNavSession] = useState(null);
+
   const realGpsRef = useRef(null);
   const gpsPending = useRef(null);
+  const watchIdRef = useRef(null);
+  const dwellTimerRef = useRef(null);
+  const navSessionRef = useRef(null);
 
-  // Default fallback location (HCM City center - near Bến Thành)
+  useEffect(() => {
+    navSessionRef.current = navSession;
+  }, [navSession]);
+
   const FALLBACK = { lat: 10.7769, lng: 106.7009 };
 
-  // Get user's current location - shares a single GPS promise to avoid duplicate requests
+  const stopTrackingGps = useCallback(() => {
+    if (watchIdRef.current !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    if (dwellTimerRef.current) {
+      clearInterval(dwellTimerRef.current);
+      dwellTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => stopTrackingGps();
+  }, [stopTrackingGps]);
+
   const getUserLocation = useCallback(() => {
-    // If we already got a real GPS position recently (<60s), reuse it
-    if (realGpsRef.current && (Date.now() - realGpsRef.current.timestamp) < 60000) {
-      console.log("[Routing] Using cached GPS position:", realGpsRef.current.loc);
+    if (realGpsRef.current && Date.now() - realGpsRef.current.timestamp < 60000) {
       setUserLocation(realGpsRef.current.loc);
       setLocationStatus(LOC_STATUS.GPS_OK);
       return Promise.resolve(realGpsRef.current.loc);
     }
 
-    // If a GPS request is already in progress, reuse the same promise
-    if (gpsPending.current) {
-      console.log("[Routing] Reusing existing GPS request...");
-      return gpsPending.current;
-    }
+    if (gpsPending.current) return gpsPending.current;
 
     if (!navigator.geolocation) {
-      console.warn("[Routing] Geolocation API not available");
       setLocationStatus(LOC_STATUS.UNAVAILABLE);
       const loc = realGpsRef.current?.loc || FALLBACK;
       setUserLocation(loc);
@@ -164,13 +195,14 @@ export default function useRouting() {
     }
 
     setLocationStatus(LOC_STATUS.PENDING);
-    console.log("[Routing] Requesting GPS position from browser...");
-
     gpsPending.current = new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          console.log("[Routing] ✅ Got real GPS:", loc, "accuracy:", pos.coords.accuracy, "m");
+          const loc = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          };
           realGpsRef.current = { loc, timestamp: Date.now() };
           try {
             localStorage.setItem("localeats_cached_gps", JSON.stringify(loc));
@@ -181,15 +213,9 @@ export default function useRouting() {
           resolve(loc);
         },
         (err) => {
-          console.warn("[Routing] ❌ GPS error:", err.code, err.message);
-          let status;
-          if (err.code === 1) {
-            status = LOC_STATUS.DENIED;
-          } else if (err.code === 2) {
-            status = LOC_STATUS.UNAVAILABLE;
-          } else {
-            status = LOC_STATUS.FALLBACK;
-          }
+          let status = LOC_STATUS.FALLBACK;
+          if (err.code === 1) status = LOC_STATUS.DENIED;
+          else if (err.code === 2) status = LOC_STATUS.UNAVAILABLE;
           setLocationStatus(status);
           const loc = realGpsRef.current?.loc || FALLBACK;
           setUserLocation(loc);
@@ -198,8 +224,8 @@ export default function useRouting() {
         },
         {
           enableHighAccuracy: true,
-          timeout: 20000,     // 20 seconds - more time for first GPS fix
-          maximumAge: 60000,  // 60 seconds cache
+          timeout: 15000,
+          maximumAge: 45000,
         }
       );
     });
@@ -207,85 +233,311 @@ export default function useRouting() {
     return gpsPending.current;
   }, []);
 
-  // Pre-fetch GPS location on mount — so position is ready when user clicks "Chỉ đường"
   useEffect(() => {
-    console.log("[Routing] Pre-fetching GPS location on mount...");
     getUserLocation();
   }, [getUserLocation]);
 
-  // Fetch route from OSRM
-  const startRoute = useCallback(async (destination, mode = transportMode) => {
-    console.log("[Routing] startRoute called:", { destination, mode });
-    setIsRouting(true);
-    setRouteError(null);
-    setRouteData(null); // Clear previous route
-    setTransportMode(mode);
+  // Gui ping GPS len backend hoac cap nhat state machine cuc bo neu offline
+  const pushGpsPing = useCallback(async (lat, lng, accuracy = 12, speed = 0, simulatedElapsedSeconds = null) => {
+    const cur = navSessionRef.current;
+    if (!cur) return null;
 
-    try {
-      const origin = await getUserLocation();
-      console.log("[Routing] Origin:", origin, "→ Destination:", destination);
+    setUserLocation({ lat, lng, accuracy });
 
-      const profile = PROFILE_MAP[mode] || "driving";
-      const url = `${OSRM_BASE}/${profile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline&steps=true`;
+    if (cur.sessionId && !String(cur.sessionId).startsWith("local-")) {
+      try {
+        const res = await localeatsApi.sendNavigationPing(cur.sessionId, {
+          latitude: lat,
+          longitude: lng,
+          accuracy,
+          speed,
+          isMock: false,
+          simulatedElapsedSeconds,
+        });
+        setNavSession((prev) => ({
+          ...(prev || {}),
+          ...res,
+          lastLat: lat,
+          lastLng: lng,
+        }));
+        return res;
+      } catch (e) {
+        console.warn("[GPS Ping] Fallback local state machine:", e.message);
+      }
+    }
 
-      console.log("[Routing] Fetching OSRM:", url);
-      const res = await fetch(url);
-      console.log("[Routing] OSRM response status:", res.status);
+    // Fallback state machine phia client neu backend chua ket noi hoac place id khong phai UUID
+    const distOrigin = Math.round(haversineMeters(cur.originLat, cur.originLng, lat, lng));
+    const distStore = Math.round(haversineMeters(lat, lng, cur.destLat, cur.destLng));
+    const dwellReq = cur.dwellRequiredSeconds || 600;
+    let status = cur.status || "started";
+    let dwellStartMs = cur.dwellStartMs || null;
+    let dwellSec = cur.dwellSeconds || 0;
 
-      if (!res.ok) throw new Error(`Lỗi kết nối dịch vụ chỉ đường (HTTP ${res.status})`);
-      
-      const data = await res.json();
-      console.log("[Routing] OSRM data:", data);
+    if (distStore <= 100) {
+      status = "near_store";
+      if (!dwellStartMs) dwellStartMs = Date.now();
+      dwellSec = Math.floor((Date.now() - dwellStartMs) / 1000) + (simulatedElapsedSeconds || 0);
+      if (dwellSec >= dwellReq) {
+        status = "arrived";
+        dwellSec = dwellReq;
+      }
+    } else {
+      dwellStartMs = null;
+      dwellSec = 0;
+      if (distOrigin >= 50 || status === "near_store") {
+        status = "moving";
+      }
+    }
 
-      if (data.code !== "Ok" || !data.routes?.length) {
-        throw new Error("Không tìm thấy tuyến đường phù hợp");
+    const statusLabel =
+      status === "started"
+        ? "Đã lấy GPS điểm xuất phát"
+        : status === "moving"
+        ? "Đang di chuyển tới quán"
+        : status === "near_store"
+        ? "Đã tới gần quán (đang đếm 10 phút dừng GPS)"
+        : "Đã đến quán ăn (Xác nhận GPS >= 10 phút)";
+
+    const next = {
+      ...cur,
+      status,
+      statusLabel,
+      distanceFromOriginMeters: distOrigin,
+      distanceToStoreMeters: distStore,
+      dwellStartMs,
+      dwellSeconds: dwellSec,
+      dwellRequiredSeconds: dwellReq,
+      dwellRemainingSeconds: Math.max(0, dwellReq - dwellSec),
+      arrived: status === "arrived",
+      lastLat: lat,
+      lastLng: lng,
+    };
+    setNavSession(next);
+    return next;
+  }, []);
+
+  // Bat dau lang nghe thay doi GPS lien tuc (watchPosition) + bo dem 1s khi dang o gan quan
+  const beginLiveGpsWatch = useCallback(
+    (initialSession) => {
+      stopTrackingGps();
+      setNavSession(initialSession);
+      navSessionRef.current = initialSession;
+
+      if (navigator.geolocation) {
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) => {
+            pushGpsPing(
+              pos.coords.latitude,
+              pos.coords.longitude,
+              pos.coords.accuracy || 12,
+              pos.coords.speed || 0
+            );
+          },
+          () => {},
+          {
+            enableHighAccuracy: true,
+            maximumAge: 5000,
+            timeout: 15000,
+          }
+        );
       }
 
-      const route = data.routes[0];
-      const coords = decodePolyline(route.geometry);
-      console.log("[Routing] Decoded", coords.length, "coordinate points");
+      // Bo dem cap nhat moi 5 giay khi nguoi dung dang dung yen tai quan (near_store)
+      dwellTimerRef.current = setInterval(() => {
+        const s = navSessionRef.current;
+        if (!s || s.status === "arrived" || s.status === "cancelled") return;
+        if (s.status === "near_store" && s.lastLat && s.lastLng) {
+          pushGpsPing(s.lastLat, s.lastLng, 10, 0, null);
+        }
+      }, 5000);
+    },
+    [pushGpsPing, stopTrackingGps]
+  );
 
-      const overallMetrics = calculateModeMetrics(route.distance, mode);
-      const ratio = overallMetrics.rawDuration / Math.max(1, route.duration);
-      
-      const steps = route.legs[0].steps.map((step, i) => {
-        const stepDuration = Math.round(step.duration * ratio);
-        return {
-          id: i,
-          instruction: getInstruction(step),
-          distance: formatDistance(step.distance),
-          duration: formatDuration(stepDuration),
-          name: step.name || "",
-          rawDistance: step.distance,
-          rawDuration: stepDuration,
-          location: step.maneuver.location,
-          type: step.maneuver.type,
+  // Ham mo phong di chuyen GPS & dung yen 10 phut de kiem thu ngay tren trinh duyet
+  const simulateGpsAction = useCallback(
+    async (actionType) => {
+      const s = navSessionRef.current;
+      if (!s) return;
+      if (actionType === "moving") {
+        // Dich chuyen 45% quang duong tu diem xuat phat ve phia quan (> 50m -> status = 'moving')
+        const midLat = s.originLat + (s.destLat - s.originLat) * 0.45;
+        const midLng = s.originLng + (s.destLng - s.originLng) * 0.45;
+        await pushGpsPing(midLat, midLng, 10, 6.5, null);
+      } else if (actionType === "near_store") {
+        // Di chuyen vao sat quan (~18m, <= 100m geofence -> status = 'near_store', bat dau dem 10 phut)
+        const nearLat = s.destLat + 0.00012;
+        const nearLng = s.destLng + 0.00012;
+        await pushGpsPing(nearLat, nearLng, 8, 0.2, null);
+      } else if (actionType === "arrived_10min") {
+        // Xac nhan da dung yen tai quan >= 600 giay (10 phut) -> status = 'arrived' + ghi store_visit
+        const nearLat = s.destLat + 0.00008;
+        const nearLng = s.destLng + 0.00008;
+        await pushGpsPing(nearLat, nearLng, 8, 0.0, 605);
+      }
+    },
+    [pushGpsPing]
+  );
+
+  const startRoute = useCallback(
+    async (destination, mode = transportMode) => {
+      setIsRouting(true);
+      setRouteError(null);
+      setRouteData(null);
+      setTransportMode(mode);
+
+      try {
+        const origin = await getUserLocation();
+        const storeIdCandidate = destination?.storeId || destination?.id;
+        const isUuid =
+          typeof storeIdCandidate === "string" &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storeIdCandidate);
+
+        // 1. Thu bat dau phien GPS & tinh duong qua Backend tren VPS DB
+        if (isUuid) {
+          try {
+            const sessionRes = await localeatsApi.startNavigationSession({
+              storeId: storeIdCandidate,
+              mode,
+              originLat: origin.lat,
+              originLng: origin.lng,
+              accuracy: origin.accuracy || 15,
+            });
+            const backendRoute = sessionRes.route;
+            const coords = decodePolyline(backendRoute.polyline);
+            const steps = (backendRoute.steps || []).map((st, i) => ({
+              id: i,
+              instruction: st.instruction,
+              distance: st.distanceText || formatDistance(st.distanceMeters || 0),
+              duration: "1 phút",
+              name: st.name || "",
+              rawDistance: st.distanceMeters || 0,
+              rawDuration: 60,
+              location: [st.lng || destination.lng, st.lat || destination.lat],
+              type: i === 0 ? "depart" : i === backendRoute.steps.length - 1 ? "arrive" : "continue",
+            }));
+            const summary = {
+              totalDistance: backendRoute.distanceText,
+              totalDuration: backendRoute.durationText,
+              rawDistance: backendRoute.distanceMeters,
+              rawDuration: backendRoute.durationSeconds,
+            };
+            const newRouteData = {
+              coords,
+              steps,
+              summary,
+              origin,
+              destination,
+              locationStatus,
+              transportMode: mode,
+            };
+            setRouteData(newRouteData);
+            setIsRouting(false);
+
+            beginLiveGpsWatch({
+              sessionId: sessionRes.sessionId,
+              storeId: sessionRes.storeId,
+              storeName: sessionRes.storeName,
+              status: sessionRes.status,
+              statusLabel: sessionRes.statusLabel,
+              distanceFromOriginMeters: 0,
+              distanceToStoreMeters: sessionRes.distanceToStoreMeters,
+              dwellSeconds: sessionRes.dwellSeconds || 0,
+              dwellRequiredSeconds: sessionRes.dwellRequiredSeconds || 600,
+              dwellRemainingSeconds: sessionRes.dwellRemainingSeconds || 600,
+              originLat: origin.lat,
+              originLng: origin.lng,
+              destLat: destination.lat,
+              destLng: destination.lng,
+              lastLat: origin.lat,
+              lastLng: origin.lng,
+            });
+            return newRouteData;
+          } catch (apiErr) {
+            console.warn("[Routing] Backend session unavailable, using direct OSRM + local GPS tracker:", apiErr.message);
+          }
+        }
+
+        // 2. Fallback: goi OSRM truc tiep + van kich hoat bo theo doi GPS 10 phut
+        const profile = PROFILE_MAP[mode] || "driving";
+        const url = `${OSRM_BASE}/${profile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline&steps=true`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Lỗi kết nối dịch vụ chỉ đường (HTTP ${res.status})`);
+        const data = await res.json();
+        if (data.code !== "Ok" || !data.routes?.length) {
+          throw new Error("Không tìm thấy tuyến đường phù hợp");
+        }
+
+        const route = data.routes[0];
+        const coords = decodePolyline(route.geometry);
+        const overallMetrics = calculateModeMetrics(route.distance, mode);
+        const ratio = overallMetrics.rawDuration / Math.max(1, route.duration);
+
+        const steps = route.legs[0].steps.map((step, i) => {
+          const stepDuration = Math.round(step.duration * ratio);
+          return {
+            id: i,
+            instruction: getInstruction(step),
+            distance: formatDistance(step.distance),
+            duration: formatDuration(stepDuration),
+            name: step.name || "",
+            rawDistance: step.distance,
+            rawDuration: stepDuration,
+            location: step.maneuver.location,
+            type: step.maneuver.type,
+          };
+        });
+
+        const summary = {
+          totalDistance: overallMetrics.distanceText,
+          totalDuration: overallMetrics.durationText,
+          rawDistance: overallMetrics.rawDistance,
+          rawDuration: overallMetrics.rawDuration,
         };
-      });
 
-      const summary = {
-        totalDistance: overallMetrics.distanceText,
-        totalDuration: overallMetrics.durationText,
-        rawDistance: overallMetrics.rawDistance,
-        rawDuration: overallMetrics.rawDuration,
-      };
+        const newRouteData = { coords, steps, summary, origin, destination, locationStatus, transportMode: mode };
+        setRouteData(newRouteData);
+        setIsRouting(false);
 
-      const newRouteData = { coords, steps, summary, origin, destination, locationStatus, transportMode: mode };
-      console.log("[Routing] ✅ Route ready:", summary, "| Location from:", locationStatus);
-      setRouteData(newRouteData);
-      setIsRouting(false);
-      return newRouteData;
-    } catch (err) {
-      console.error("[Routing] ❌ Error:", err);
-      setRouteError(err.message);
-      setIsRouting(false);
-      return null;
-    }
-  }, [getUserLocation, transportMode, locationStatus]);
+        const initDist = Math.round(haversineMeters(origin.lat, origin.lng, destination.lat, destination.lng));
+        beginLiveGpsWatch({
+          sessionId: `local-${Date.now()}`,
+          storeId: storeIdCandidate || "local",
+          status: initDist <= 100 ? "near_store" : "started",
+          statusLabel:
+            initDist <= 100
+              ? "Đã tới gần quán (đang đếm 10 phút dừng GPS)"
+              : "Đã lấy GPS điểm xuất phát",
+          distanceFromOriginMeters: 0,
+          distanceToStoreMeters: initDist,
+          dwellSeconds: 0,
+          dwellRequiredSeconds: 600,
+          dwellRemainingSeconds: 600,
+          originLat: origin.lat,
+          originLng: origin.lng,
+          destLat: destination.lat,
+          destLng: destination.lng,
+          lastLat: origin.lat,
+          lastLng: origin.lng,
+        });
 
-  // Clear route & khôi phục lại GPS thật của người dùng nếu trước đó chọn điểm bắt đầu thủ công
+        return newRouteData;
+      } catch (err) {
+        setRouteError(err.message);
+        setIsRouting(false);
+        return null;
+      }
+    },
+    [getUserLocation, transportMode, locationStatus, beginLiveGpsWatch]
+  );
+
   const clearRoute = useCallback(() => {
-    console.log("[Routing] Clearing route");
+    stopTrackingGps();
+    if (navSessionRef.current?.sessionId && !String(navSessionRef.current.sessionId).startsWith("local-")) {
+      localeatsApi.cancelNavigationSession(navSessionRef.current.sessionId).catch(() => {});
+    }
+    setNavSession(null);
     setRouteData(null);
     setRouteError(null);
     setLocationStatus(LOC_STATUS.PENDING);
@@ -295,96 +547,95 @@ export default function useRouting() {
     } else {
       getUserLocation();
     }
-  }, [getUserLocation]);
+  }, [getUserLocation, stopTrackingGps]);
 
-  // Switch transport mode & re-route
-  const switchMode = useCallback(async (mode) => {
-    if (routeData?.destination) {
-      await startRoute(routeData.destination, mode);
-    } else {
-      setTransportMode(mode);
-    }
-  }, [routeData, startRoute]);
+  const switchMode = useCallback(
+    async (mode) => {
+      if (routeData?.destination) {
+        await startRoute(routeData.destination, mode);
+      } else {
+        setTransportMode(mode);
+      }
+    },
+    [routeData, startRoute]
+  );
 
-  // Retry GPS and re-route (user clicked "Thử lại GPS")
   const retryWithGps = useCallback(async () => {
-    console.log("[Routing] Retrying GPS location...");
-    // Clear cached position to force a fresh GPS request
     realGpsRef.current = null;
     setLocationStatus(LOC_STATUS.PENDING);
-
     if (routeData?.destination) {
-      // Re-route with fresh GPS attempt
-      await startRoute(routeData.destination, transportMode);
-    } else {
-      // Just try to get GPS position without routing
-      await getUserLocation();
+      return await startRoute(routeData.destination, transportMode);
     }
+    return await getUserLocation();
   }, [routeData, startRoute, transportMode, getUserLocation]);
 
-  // Route from a manually selected origin (user picks their starting point)
-  const routeFromOrigin = useCallback(async (manualOrigin, destination, mode = transportMode, originName = null) => {
-    console.log("[Routing] Manual origin:", manualOrigin, "→ Destination:", destination);
-    setIsRouting(true);
-    setRouteError(null);
-    setRouteData(null);
-    setTransportMode(mode);
-    setUserLocation(manualOrigin);
-    setLocationStatus("manual");
+  const routeFromOrigin = useCallback(
+    async (manualOrigin, destination, mode = transportMode, originName = null) => {
+      setIsRouting(true);
+      setRouteError(null);
+      setRouteData(null);
+      setTransportMode(mode);
+      setUserLocation(manualOrigin);
+      setLocationStatus("manual");
 
-    try {
-      const profile = PROFILE_MAP[mode] || "driving";
-      const url = `${OSRM_BASE}/${profile}/${manualOrigin.lng},${manualOrigin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline&steps=true`;
+      try {
+        const profile = PROFILE_MAP[mode] || "driving";
+        const url = `${OSRM_BASE}/${profile}/${manualOrigin.lng},${manualOrigin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline&steps=true`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Lỗi kết nối dịch vụ chỉ đường (HTTP ${res.status})`);
+        const data = await res.json();
+        if (data.code !== "Ok" || !data.routes?.length) {
+          throw new Error("Không tìm thấy tuyến đường phù hợp");
+        }
 
-      console.log("[Routing] Fetching OSRM (manual origin):", url);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Lỗi kết nối dịch vụ chỉ đường (HTTP ${res.status})`);
-      
-      const data = await res.json();
-      if (data.code !== "Ok" || !data.routes?.length) {
-        throw new Error("Không tìm thấy tuyến đường phù hợp");
-      }
+        const route = data.routes[0];
+        const coords = decodePolyline(route.geometry);
+        const overallMetrics = calculateModeMetrics(route.distance, mode);
+        const ratio = overallMetrics.rawDuration / Math.max(1, route.duration);
 
-      const route = data.routes[0];
-      const coords = decodePolyline(route.geometry);
-      
-      const overallMetrics = calculateModeMetrics(route.distance, transportMode);
-      const ratio = overallMetrics.rawDuration / Math.max(1, route.duration);
+        const steps = route.legs[0].steps.map((step, i) => {
+          const stepDuration = Math.round(step.duration * ratio);
+          return {
+            id: i,
+            instruction: getInstruction(step),
+            distance: formatDistance(step.distance),
+            duration: formatDuration(stepDuration),
+            name: step.name || "",
+            rawDistance: step.distance,
+            rawDuration: stepDuration,
+            location: step.maneuver.location,
+            type: step.maneuver.type,
+          };
+        });
 
-      const steps = route.legs[0].steps.map((step, i) => {
-        const stepDuration = Math.round(step.duration * ratio);
-        return {
-          id: i,
-          instruction: getInstruction(step),
-          distance: formatDistance(step.distance),
-          duration: formatDuration(stepDuration),
-          name: step.name || "",
-          rawDistance: step.distance,
-          rawDuration: stepDuration,
-          location: step.maneuver.location,
-          type: step.maneuver.type,
+        const summary = {
+          totalDistance: overallMetrics.distanceText,
+          totalDuration: overallMetrics.durationText,
+          rawDistance: overallMetrics.rawDistance,
+          rawDuration: overallMetrics.rawDuration,
         };
-      });
 
-      const summary = {
-        totalDistance: overallMetrics.distanceText,
-        totalDuration: overallMetrics.durationText,
-        rawDistance: overallMetrics.rawDistance,
-        rawDuration: overallMetrics.rawDuration,
-      };
-
-      const newRouteData = { coords, steps, summary, origin: manualOrigin, destination, locationStatus: "manual", originName, transportMode };
-      console.log("[Routing] ✅ Route ready (manual origin):", summary);
-      setRouteData(newRouteData);
-      setIsRouting(false);
-      return newRouteData;
-    } catch (err) {
-      console.error("[Routing] ❌ Error:", err);
-      setRouteError(err.message);
-      setIsRouting(false);
-      return null;
-    }
-  }, [transportMode]);
+        const newRouteData = {
+          coords,
+          steps,
+          summary,
+          origin: manualOrigin,
+          destination,
+          locationStatus: "manual",
+          originName,
+          transportMode: mode,
+        };
+        setRouteData(newRouteData);
+        setIsRouting(false);
+        return newRouteData;
+      } catch (err) {
+        setRouteError(err.message);
+        setIsRouting(false);
+        return null;
+      }
+    },
+    [transportMode]
+  );
 
   return {
     routeData,
@@ -393,25 +644,26 @@ export default function useRouting() {
     transportMode,
     userLocation,
     locationStatus,
+    navSession,
     startRoute,
     clearRoute,
     switchMode,
     setTransportMode,
     retryWithGps,
     routeFromOrigin,
+    simulateGpsAction,
   };
 }
 
-// Popular locations in HCM City for manual selection
 export const PRESET_LOCATIONS = [
-  { id: "benThanh", name: "Chợ Bến Thành", lat: 10.7725, lng: 106.6980 },
-  { id: "q1Center", name: "Trung tâm Q.1 (Nguyễn Huệ)", lat: 10.7738, lng: 106.7030 },
+  { id: "benThanh", name: "Chợ Bến Thành", lat: 10.7725, lng: 106.698 },
+  { id: "q1Center", name: "Trung tâm Q.1 (Nguyễn Huệ)", lat: 10.7738, lng: 106.703 },
   { id: "q3", name: "Quận 3 (Võ Văn Tần)", lat: 10.7796, lng: 106.6894 },
-  { id: "q5", name: "Quận 5 (Chợ Lớn)", lat: 10.7540, lng: 106.6633 },
+  { id: "q5", name: "Quận 5 (Chợ Lớn)", lat: 10.754, lng: 106.6633 },
   { id: "q7", name: "Quận 7 (Phú Mỹ Hưng)", lat: 10.7295, lng: 106.7218 },
   { id: "binhThanh", name: "Bình Thạnh (Hàng Xanh)", lat: 10.8012, lng: 106.7103 },
   { id: "goVap", name: "Gò Vấp (Ngã 5)", lat: 10.8389, lng: 106.6519 },
   { id: "thuDuc", name: "TP. Thủ Đức (Suối Tiên)", lat: 10.8701, lng: 106.7612 },
-  { id: "tanBinh", name: "Tân Bình (Sân bay TSN)", lat: 10.8188, lng: 106.6590 },
+  { id: "tanBinh", name: "Tân Bình (Sân bay TSN)", lat: 10.8188, lng: 106.659 },
   { id: "phuNhuan", name: "Phú Nhuận (Phan Đình Phùng)", lat: 10.7984, lng: 106.6819 },
 ];

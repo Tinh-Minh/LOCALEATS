@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { places } from "../data/places";
+import { apiFetch } from "../utils/api";
 
 // Danh sách các phòng Livestream ẩm thực trực tiếp
 const initialStreams = [
@@ -91,6 +92,36 @@ export default function LivePulsePage() {
   const [likeCount, setLikeCount] = useState(initialStreams[0].likes);
   const [hearts, setHearts] = useState([]);
 
+  useEffect(() => {
+    let mounted = true;
+    apiFetch("/api/lives")
+      .then((data) => {
+        if (mounted && Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((l, idx) => ({
+            id: l.id,
+            placeId: l.storeId || 1,
+            placeName: l.storeName || initialStreams[idx % initialStreams.length].placeName,
+            streamer: "Creator Ẩm Thực LocalEats",
+            streamerAvatar: initialStreams[idx % initialStreams.length].streamerAvatar,
+            badge: "Livestream Xác Thực GPS",
+            title: l.title || initialStreams[idx % initialStreams.length].title,
+            viewers: l.viewers || 1520,
+            likes: l.likes || 4200,
+            tag: initialStreams[idx % initialStreams.length].tag,
+            videoBg: l.thumbnailUrl || initialStreams[idx % initialStreams.length].videoBg,
+            liveDeal: initialStreams[idx % initialStreams.length].liveDeal,
+            chatMessages: initialStreams[idx % initialStreams.length].chatMessages,
+          }));
+          setStreams([...mapped, ...initialStreams]);
+          setSelectedStream(mapped[0]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Cập nhật lượt like khi đổi stream
   useEffect(() => {
     setLikeCount(selectedStream.likes);
@@ -119,6 +150,9 @@ export default function LivePulsePage() {
   const handleLikeStream = () => {
     setLikeCount((prev) => prev + 1);
     setIsLiked(true);
+    if (selectedStream?.id && String(selectedStream.id).includes("-")) {
+      apiFetch(`/api/lives/${selectedStream.id}/like`, { method: "POST" }).catch(() => {});
+    }
     const newHeart = { id: Date.now(), x: Math.random() * 60 + 20 };
     setHearts((prev) => [...prev, newHeart]);
     setTimeout(() => {

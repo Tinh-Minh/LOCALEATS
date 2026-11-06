@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { places, trendingFoods } from "../data/places";
+import { places as initialPlaces, trendingFoods } from "../data/places";
+import { localeatsApi } from "../utils/api";
 
 const timeTabs = [
   { id: "today", label: "24h Qua (Live)", icon: "bolt" },
@@ -10,9 +11,25 @@ const timeTabs = [
 
 export default function HotListPage() {
   const navigate = useNavigate();
+  const [places, setPlaces] = useState(initialPlaces);
   const [activeTab, setActiveTab] = useState("week");
   const [districtFilter, setDistrictFilter] = useState("all");
   const [visibleCount, setVisibleCount] = useState(6);
+
+  useEffect(() => {
+    let cancelled = false;
+    localeatsApi
+      .getHotStores(activeTab, districtFilter)
+      .then((rows) => {
+        if (!cancelled && Array.isArray(rows) && rows.length > 0) {
+          setPlaces([...rows, ...initialPlaces]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, districtFilter]);
 
   // Danh sách các quận có trong dữ liệu
   const districts = ["all", ...new Set(places.map((p) => p.district || "Quận 1"))];

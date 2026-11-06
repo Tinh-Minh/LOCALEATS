@@ -75,7 +75,7 @@ export default function PlacePopup({ place, userLocation, onClose, onStartRoute,
 
   const handleStartRoute = () => {
     if (onStartRoute) {
-      onStartRoute({ lat: place.lat, lng: place.lng }, selectedMode);
+      onStartRoute({ id: place.id, storeId: place.storeId || place.id, lat: place.lat, lng: place.lng, name: place.name }, selectedMode);
     }
   };
 

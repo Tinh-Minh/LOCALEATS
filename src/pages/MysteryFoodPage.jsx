@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { places } from "../data/places";
+import { apiFetch } from "../utils/api";
 
 // Thử thách ẩm thực thú vị
 const FOOD_CHALLENGES = [
@@ -45,9 +46,41 @@ export default function MysteryFoodPage() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedResult, setSelectedResult] = useState(null);
   const [filterMood, setFilterMood] = useState("all");
+  const [challenges, setChallenges] = useState(FOOD_CHALLENGES);
 
-  // Bốc ngẫu nhiên quán ăn
-  const handleSpinWheel = () => {
+  useEffect(() => {
+    let mounted = true;
+    apiFetch("/api/challenges/me")
+      .then((data) => {
+        if (mounted && Array.isArray(data) && data.length > 0) {
+          const colors = [
+            "from-orange-500 to-amber-500",
+            "from-purple-600 to-indigo-600",
+            "from-red-500 to-pink-500",
+          ];
+          setChallenges(
+            data.map((ch, idx) => ({
+              id: ch.id,
+              title: ch.title,
+              desc: ch.description,
+              icon: ch.badgeIcon || "military_tech",
+              color: colors[idx % colors.length],
+              progress: ch.currentCount ?? 1,
+              total: ch.targetCount ?? 3,
+              completed: Boolean(ch.completed),
+              reward: `Huy hiệu ${ch.badgeName} (+${ch.rewardPoints} điểm)`,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Bốc ngẫu nhiên quán ăn (kết nối /api/mystery/spin + lưu spin_history)
+  const handleSpinWheel = async () => {
     setIsSpinning(true);
     setSelectedResult(null);
 
@@ -56,6 +89,24 @@ export default function MysteryFoodPage() {
     if (filterMood === "hot") candidates = places.filter((p) => p.hot);
     if (filterMood === "late") candidates = places.filter((p) => p.closeAt === "23:00" || p.closeAt === "24/24" || p.closeAt >= "22:30");
 
+    let apiWinner = null;
+    apiFetch(`/api/mystery/spin?filter=${encodeURIComponent(filterMood)}`)
+      .then((res) => {
+        if (res && res.id) {
+          apiWinner = {
+            id: res.id,
+            name: res.name,
+            address: res.address,
+            district: res.district || "TP. HCM",
+            specialty: res.specialty || "Món ngon đặc trưng",
+            price: `${Number(res.priceMin || 35000).toLocaleString("vi-VN")}đ - ${Number(res.priceMax || 85000).toLocaleString("vi-VN")}đ`,
+            rating: Number(res.rating || 4.7),
+            image: res.image || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&q=80",
+          };
+        }
+      })
+      .catch(() => {});
+
     let counter = 0;
     const interval = setInterval(() => {
       const randomIdx = Math.floor(Math.random() * candidates.length);
@@ -63,6 +114,7 @@ export default function MysteryFoodPage() {
       counter++;
       if (counter > 15) {
         clearInterval(interval);
+        if (apiWinner) setSelectedResult(apiWinner);
         setIsSpinning(false);
       }
     }, 90);
@@ -218,7 +270,7 @@ export default function MysteryFoodPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {FOOD_CHALLENGES.map((ch) => (
+            {challenges.map((ch) => (
               <div
                 key={ch.id}
                 className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden"

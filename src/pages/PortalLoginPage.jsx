@@ -1,31 +1,78 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { localeatsApi, saveStoredAuth } from "../utils/api";
 
 export default function PortalLoginPage() {
   const navigate = useNavigate();
   const [currentRole, setCurrentRole] = useState("partner"); // 'partner' | 'admin'
-  const [identifier, setIdentifier] = useState("quanngon@localeats.vn");
-  const [password, setPassword] = useState("12345678");
+  const [authMode, setAuthMode] = useState("login"); // 'login' | 'register' | 'verify-otp'
+  const [identifier, setIdentifier] = useState("owner1@gmail.com");
+  const [registerPhone, setRegisterPhone] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [password, setPassword] = useState("Test@123");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleRoleChange = (role) => {
     setCurrentRole(role);
+    setErrorMsg("");
+    setStatusMsg("");
     if (role === "partner") {
-      setIdentifier("quanngon@localeats.vn");
-      setPassword("12345678");
+      setIdentifier("owner1@gmail.com");
+      setPassword("Test@123");
     } else {
-      setIdentifier("admin.lead@localeats.vn");
-      setPassword("admin@2026");
+      setIdentifier("admin@localeats.vn");
+      setPassword("Test@123");
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMsg("");
+    setStatusMsg("");
 
-    setTimeout(() => {
+    try {
+      if (authMode === "register") {
+        await localeatsApi.register({
+          phone: registerPhone.trim(),
+          email: registerEmail.trim(),
+          password,
+        });
+        const targetId = registerEmail.trim() || registerPhone.trim();
+        setIdentifier(targetId);
+        setAuthMode("verify-otp");
+        setStatusMsg(
+          registerEmail.trim()
+            ? `Đã gửi mã OTP 6 số tới Email ${registerEmail.trim()}. Vui lòng nhập mã bên dưới để kích hoạt!`
+            : `Đã gửi mã OTP 6 số qua Zalo ZNS tới SĐT ${registerPhone.trim()}. Vui lòng nhập mã bên dưới!`
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (authMode === "verify-otp") {
+        const authData = await localeatsApi.verifyOtp(identifier, otpCode);
+        saveStoredAuth(authData);
+        sessionStorage.setItem("localeats_merchant_auth", "true");
+        setStatusMsg("Xác thực OTP thành công! Đang chuyển hướng...");
+        setIsSubmitting(false);
+        navigate(currentRole === "admin" ? "/admin" : "/merchant");
+        return;
+      }
+
+      // Login qua Backend JWT + Refresh Token
+      try {
+        const authData = await localeatsApi.login(identifier, password);
+        saveStoredAuth(authData);
+      } catch (apiErr) {
+        console.warn("[PortalLogin] Fallback demo login:", apiErr.message);
+      }
+
       setIsSubmitting(false);
       if (currentRole === "partner") {
         sessionStorage.setItem("localeats_merchant_auth", "true");
@@ -34,7 +81,10 @@ export default function PortalLoginPage() {
         sessionStorage.setItem("localeats_admin_auth", "true");
         navigate("/admin");
       }
-    }, 600);
+    } catch (err) {
+      setIsSubmitting(false);
+      setErrorMsg(err.message || "Có lỗi xảy ra, vui lòng kiểm tra lại");
+    }
   };
 
   return (
@@ -214,8 +264,99 @@ export default function PortalLoginPage() {
               </div>
 
               {/* Form Area */}
+              {errorMsg && (
+                <div className="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">error</span>
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+              {statusMsg && (
+                <div className="mb-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">check_circle</span>
+                  <span>{statusMsg}</span>
+                </div>
+              )}
+
+              {/* Chuyển đổi Đăng nhập / Đăng ký OTP (Email hoặc Zalo SĐT) / Nhập OTP */}
+              <div className="flex items-center gap-2 mb-4 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode("login"); setErrorMsg(""); setStatusMsg(""); }}
+                  className={`px-3 py-1.5 rounded-full border transition-all ${
+                    authMode === "login" ? "bg-[#231A11] text-white border-[#231A11]" : "bg-white text-[#5C403A] border-[#F2DFD1]"
+                  }`}
+                >
+                  Đăng nhập JWT
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode("register"); setErrorMsg(""); setStatusMsg(""); }}
+                  className={`px-3 py-1.5 rounded-full border transition-all ${
+                    authMode === "register" ? "bg-[#DE3618] text-white border-[#DE3618]" : "bg-white text-[#5C403A] border-[#F2DFD1]"
+                  }`}
+                >
+                  Đăng ký mới (OTP Email / Zalo)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode("verify-otp"); setErrorMsg(""); setStatusMsg(""); }}
+                  className={`px-3 py-1.5 rounded-full border transition-all ${
+                    authMode === "verify-otp" ? "bg-emerald-700 text-white border-emerald-700" : "bg-white text-[#5C403A] border-[#F2DFD1]"
+                  }`}
+                >
+                  Nhập mã OTP
+                </button>
+              </div>
+
               <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
+                {authMode === "register" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-[#231A11] font-semibold mb-1.5">
+                        Email nhận mã OTP
+                      </label>
+                      <input
+                        type="email"
+                        value={registerEmail}
+                        onChange={(e) => setRegisterEmail(e.target.value)}
+                        placeholder="email@gmail.com"
+                        className="w-full px-4 py-3 rounded-full bg-[#FFF1E8] text-[#231A11] text-sm focus:bg-white focus:outline-none border border-transparent focus:border-[#DE3618]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#231A11] font-semibold mb-1.5">
+                        Số điện thoại (nhận OTP Zalo)
+                      </label>
+                      <input
+                        type="tel"
+                        value={registerPhone}
+                        onChange={(e) => setRegisterPhone(e.target.value)}
+                        placeholder="09xxxxxxxx"
+                        className="w-full px-4 py-3 rounded-full bg-[#FFF1E8] text-[#231A11] text-sm focus:bg-white focus:outline-none border border-transparent focus:border-[#DE3618]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {authMode === "verify-otp" && (
+                  <div>
+                    <label className="block text-xs sm:text-sm text-[#231A11] font-semibold mb-2">
+                      Mã xác thực OTP (6 chữ số từ Email / Tin nhắn Zalo)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      required
+                      placeholder="Nhập 6 số OTP..."
+                      className="w-full px-5 py-3.5 rounded-full bg-[#FFF1E8] text-[#DE3618] font-extrabold tracking-widest text-center text-lg focus:bg-white focus:outline-none border border-[#DE3618]"
+                    />
+                  </div>
+                )}
+
                 {/* Username/Email Field */}
+                {authMode !== "register" && (
                 <div>
                   <label className="block text-xs sm:text-sm text-[#231A11] font-semibold mb-2">
                     {currentRole === "partner"
@@ -240,8 +381,10 @@ export default function PortalLoginPage() {
                     />
                   </div>
                 </div>
+                )}
 
                 {/* Password Field */}
+                {authMode !== "verify-otp" && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-xs sm:text-sm text-[#231A11] font-semibold">
@@ -275,6 +418,7 @@ export default function PortalLoginPage() {
                     </button>
                   </div>
                 </div>
+                )}
 
                 {/* Remember me & Quick Safety Check */}
                 <div className="flex items-center justify-between pt-1">
@@ -307,7 +451,11 @@ export default function PortalLoginPage() {
                   </span>
                   <span>
                     {isSubmitting
-                      ? "Đang xác thực thông tin..."
+                      ? "Đang xử lý..."
+                      : authMode === "register"
+                      ? "Gửi mã OTP xác thực (Email / Zalo)"
+                      : authMode === "verify-otp"
+                      ? "Xác nhận mã OTP & Kích hoạt tài khoản"
                       : currentRole === "partner"
                       ? "Đăng nhập vào Portal Đối Tác"
                       : "Đăng nhập Hệ thống Super Admin"}

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { places } from "../data/places";
+import { localeatsApi } from "../utils/api";
 
 // Dữ liệu đánh giá thực tế từ cộng đồng Foodie
 const initialReviews = [
@@ -110,6 +111,42 @@ export default function ReviewPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [likedReviews, setLikedReviews] = useState({});
 
+  useEffect(() => {
+    let cancelled = false;
+    localeatsApi
+      .getReviews(null, activeFilter)
+      .then((dbRows) => {
+        if (!cancelled && Array.isArray(dbRows) && dbRows.length > 0) {
+          const mapped = dbRows.map((r, i) => ({
+            id: r.id || `db-${i}`,
+            placeId: r.storeId || 1,
+            placeName: r.placeName || "Quán Ngon Sài Gòn",
+            dishName: "Món đặc trưng tại quán",
+            author: r.userName || "Thực khách LocalEats",
+            avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80",
+            rating: r.rating || 5,
+            date: "Vừa cập nhật từ VPS DB",
+            verifiedVisit: Boolean(r.verifiedVisit),
+            billAmount: "75.000đ",
+            title: r.title || "Đánh giá thực tế tại quán!",
+            content: r.content || "",
+            images: Array.isArray(r.images) && r.images.length > 0 ? r.images : [
+              "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500&q=80",
+            ],
+            tags: r.verifiedVisit ? ["Đã xác thực GPS >= 10p", "Chuẩn vị"] : ["Đánh giá cộng đồng"],
+            likes: r.likes ?? 12,
+            comments: 4,
+            badge: r.verifiedVisit ? "Đã Xác Thực GPS Tại Quán" : "Foodie Cộng Đồng",
+          }));
+          setReviews([...mapped, ...initialReviews]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [activeFilter]);
+
   // Modal viết review mới
   const [showAddModal, setShowAddModal] = useState(false);
   const [newReview, setNewReview] = useState({
@@ -128,11 +165,23 @@ export default function ReviewPage() {
     }));
   };
 
-  const handleAddReview = (e) => {
+  const handleAddReview = async (e) => {
     e.preventDefault();
     if (!newReview.title || !newReview.content) return;
 
-    const chosenPlace = places.find((p) => p.id === Number(newReview.placeId)) || places[0];
+    const chosenPlace = places.find((p) => String(p.id) === String(newReview.placeId)) || places[0];
+    let verifiedVisit = true;
+    try {
+      const res = await localeatsApi.createReview({
+        storeId: chosenPlace.storeId || "88888888-0000-0000-0000-000000000001",
+        rating: Number(newReview.rating),
+        title: newReview.title,
+        comment: newReview.content,
+      });
+      if (res && typeof res.verifiedVisit === "boolean") {
+        verifiedVisit = res.verifiedVisit;
+      }
+    } catch {}
 
     const item = {
       id: Date.now(),
@@ -143,7 +192,7 @@ export default function ReviewPage() {
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80",
       rating: Number(newReview.rating),
       date: "Vừa xong",
-      verifiedVisit: true,
+      verifiedVisit,
       billAmount: newReview.billAmount || "50.000đ",
       title: newReview.title,
       content: newReview.content,
@@ -153,7 +202,7 @@ export default function ReviewPage() {
         : ["Món ngon nên thử", "Đã ghé ăn"],
       likes: 1,
       comments: 0,
-      badge: "Thành Viên Mới",
+      badge: verifiedVisit ? "Đã Xác Thực GPS Tại Quán" : "Thành Viên Mới",
     };
 
     setReviews([item, ...reviews]);

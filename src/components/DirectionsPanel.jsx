@@ -55,6 +55,8 @@ export default function DirectionsPanel({
   routeError,
   transportMode,
   locationStatus,
+  navSession,
+  onSimulateGps,
   onSwitchMode,
   onRetryGps,
   onRouteFromOrigin,
@@ -458,6 +460,85 @@ export default function DirectionsPanel({
               </div>
             </div>
           </div>
+
+          {/* ====== TRẠNG THÁI ĐỊNH VỊ GPS THỜI GIAN THỰC & ĐẾM NGƯỢC 10 PHÚT ĐẾN QUÁN ====== */}
+          {navSession && (
+            <div className="mx-3 mb-2 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/90 via-teal-50/70 to-white p-3 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                      navSession.status === "arrived"
+                        ? "bg-emerald-600"
+                        : navSession.status === "near_store"
+                        ? "bg-amber-500 animate-ping"
+                        : "bg-blue-600 animate-pulse"
+                    }`}
+                  />
+                  <span className="text-[11px] font-extrabold text-gray-900 truncate">
+                    {navSession.statusLabel || "Đang theo dõi GPS"}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-emerald-200 text-emerald-700 shrink-0">
+                  Cách quán: {navSession.distanceToStoreMeters ?? 0}m
+                </span>
+              </div>
+
+              {/* Thanh tiến trình dừng GPS 10 phút (600 giây) */}
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-[10px] font-semibold text-gray-600 mb-1">
+                  <span>
+                    {navSession.status === "arrived"
+                      ? "✅ Đã xác nhận tới quán (Dừng GPS ≥ 10 phút)"
+                      : navSession.status === "near_store"
+                      ? `⏱ Đang dừng tại quán: ${Math.floor((navSession.dwellSeconds || 0) / 60)}p ${(navSession.dwellSeconds || 0) % 60}s / 10p`
+                      : "📍 Khi tới bán kính 100m & dừng GPS ≥ 10 phút sẽ tính đã đến quán"}
+                  </span>
+                  <span className="font-bold text-emerald-700">
+                    {Math.min(100, Math.round(((navSession.dwellSeconds || 0) / (navSession.dwellRequiredSeconds || 600)) * 100))}%
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, Math.round(((navSession.dwellSeconds || 0) / (navSession.dwellRequiredSeconds || 600)) * 100))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Bộ nút mô phỏng di chuyển GPS & dừng 10 phút để kiểm thử trực tiếp */}
+              {onSimulateGps && (
+                <div className="mt-2.5 pt-2 border-t border-emerald-200/70 flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onSimulateGps("moving")}
+                    className="flex-1 py-1 px-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition-all active:scale-95"
+                    title="Mô phỏng GPS thay đổi > 50m -> chuyển sang Đang di chuyển"
+                  >
+                    🛵 Mô phỏng: Đang di chuyển
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onSimulateGps("near_store")}
+                    className="flex-1 py-1 px-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold transition-all active:scale-95"
+                    title="Mô phỏng GPS vào bán kính 100m của quán -> bắt đầu đếm 10 phút"
+                  >
+                    📍 Tới quán (&lt;100m)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onSimulateGps("arrived_10min")}
+                    className="w-full py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold transition-all active:scale-95 shadow-xs"
+                    title="Mô phỏng đã dừng GPS tại quán đủ 10 phút -> Xác nhận Đã Đến Quán trên DB VPS"
+                  >
+                    🎉 Xác nhận dừng GPS ≥ 10 phút (Đã Đến Quán)
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Steps list */}
           <div className="max-h-[160px] sm:max-h-[220px] overflow-y-auto styled-scrollbar px-3 pb-3">

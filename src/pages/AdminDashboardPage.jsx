@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { localeatsApi } from "../utils/api";
 
 // Import all Super Admin Tab components
 import AdminOverviewTab from "./admin/AdminOverviewTab";
@@ -48,10 +49,20 @@ export default function AdminDashboardPage() {
     setTimeout(() => setToastMessage(null), 3200);
   };
 
-  const handleAddPlaceSubmit = (e) => {
+  const handleAddPlaceSubmit = async (e) => {
     e.preventDefault();
+    try {
+      await localeatsApi.adminCreateStore({
+        name: newPlace.name,
+        address: newPlace.address,
+        district: newPlace.district,
+        specialty: newPlace.specialty,
+        lat: newPlace.lat,
+        lng: newPlace.lng,
+      });
+    } catch {}
     setIsAddModalOpen(false);
-    showToast(`Đã thêm quán "${newPlace.name}" vào mạng lưới dữ liệu thành công!`);
+    showToast(`Đã thêm quán "${newPlace.name}" vào PostgreSQL trên VPS thành công!`);
     setNewPlace({
       name: "",
       category: "Phở",

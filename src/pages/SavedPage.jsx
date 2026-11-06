@@ -1,17 +1,46 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { localeatsApi } from "../utils/api";
 
 export default function SavedPage() {
   const navigate = useNavigate();
   const [savedTrips, setSavedTrips] = useState([]);
 
   useEffect(() => {
+    let localTrips = [];
     try {
-      const trips = JSON.parse(localStorage.getItem("localeats_saved_trips") || "[]");
-      setSavedTrips(trips);
+      localTrips = JSON.parse(localStorage.getItem("localeats_saved_trips") || "[]");
+      setSavedTrips(localTrips);
     } catch {
       setSavedTrips([]);
     }
+
+    localeatsApi
+      .getTrips()
+      .then((dbTrips) => {
+        if (Array.isArray(dbTrips) && dbTrips.length > 0) {
+          const mapped = dbTrips.map((t) => ({
+            id: t.id,
+            title: t.title,
+            vehicle: t.vehicle || "bike",
+            savedAt: "Đã lưu trên VPS DB",
+            totalKm: t.totalDistanceMeters ? (t.totalDistanceMeters / 1000).toFixed(1) : "14.2",
+            startPoint: t.startLabel || "Điểm xuất phát",
+            destinationPoint: t.destLabel || "Điểm kết thúc",
+            stops: (t.stops || []).map((s, idx) => ({
+              id: s.storeId || s.id,
+              name: s.name,
+              address: s.address || "TP. HCM",
+              lat: s.lat,
+              lng: s.lng,
+              category: s.visited ? "✅ Đã đến (GPS >= 10p)" : "Trạm dừng ẩm thực",
+              order: s.stopOrder || idx + 1,
+            })),
+          }));
+          setSavedTrips([...localTrips, ...mapped]);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleDeleteTrip = (tripId) => {
