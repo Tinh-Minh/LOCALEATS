@@ -361,9 +361,17 @@ export default function useRouting() {
       const s = navSessionRef.current;
       if (!s) return;
       if (actionType === "moving") {
-        // Dich chuyen 45% quang duong tu diem xuat phat ve phia quan (> 50m -> status = 'moving')
-        const midLat = s.originLat + (s.destLat - s.originLat) * 0.45;
-        const midLng = s.originLng + (s.destLng - s.originLng) * 0.45;
+        // Dich chuyen doc theo tuyen duong thuc te (~45% lo trinh) hoac trung diem (> 50m -> status = 'moving')
+        let midLat = s.originLat + (s.destLat - s.originLat) * 0.45;
+        let midLng = s.originLng + (s.destLng - s.originLng) * 0.45;
+        if (routeData?.coords && routeData.coords.length > 2) {
+          const idx = Math.min(routeData.coords.length - 2, Math.max(1, Math.floor(routeData.coords.length * 0.45)));
+          const pt = routeData.coords[idx]; // [lng, lat]
+          if (Array.isArray(pt) && pt.length >= 2) {
+            midLng = pt[0];
+            midLat = pt[1];
+          }
+        }
         await pushGpsPing(midLat, midLng, 10, 6.5, null);
       } else if (actionType === "near_store") {
         // Di chuyen vao sat quan (~18m, <= 100m geofence -> status = 'near_store', bat dau dem 10 phut)
@@ -377,8 +385,54 @@ export default function useRouting() {
         await pushGpsPing(nearLat, nearLng, 8, 0.0, 605);
       }
     },
-    [pushGpsPing]
+    [pushGpsPing, routeData]
   );
+
+  const fetchDirectOsrmRoute = useCallback(async (origin, destination, mode) => {
+    const profile = PROFILE_MAP[mode] || "driving";
+    const osmDeProfile = mode === "walk" ? "routed-foot" : mode === "car" ? "routed-car" : "routed-bike";
+    const urls = [
+      `${OSRM_BASE}/${profile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline&steps=true`,
+      `https://routing.openstreetmap.de/${osmDeProfile}/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline&steps=true`,
+    ];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data.code === "Ok" && data.routes?.length) {
+          const route = data.routes[0];
+          const coords = decodePolyline(route.geometry);
+          if (coords.length > 2) {
+            const overallMetrics = calculateModeMetrics(route.distance, mode);
+            const ratio = overallMetrics.rawDuration / Math.max(1, route.duration);
+            const steps = route.legs[0].steps.map((step, i) => {
+              const stepDuration = Math.round(step.duration * ratio);
+              return {
+                id: i,
+                instruction: getInstruction(step),
+                distance: formatDistance(step.distance),
+                duration: formatDuration(stepDuration),
+                name: step.name || "",
+                rawDistance: step.distance,
+                rawDuration: stepDuration,
+                location: step.maneuver.location,
+                type: step.maneuver.type,
+              };
+            });
+            const summary = {
+              totalDistance: overallMetrics.distanceText,
+              totalDuration: overallMetrics.durationText,
+              rawDistance: overallMetrics.rawDistance,
+              rawDuration: overallMetrics.rawDuration,
+            };
+            return { coords, steps, summary };
+          }
+        }
+      } catch {}
+    }
+    return null;
+  }, []);
 
   const startRoute = useCallback(
     async (destination, mode = transportMode) => {
@@ -405,24 +459,35 @@ export default function useRouting() {
               accuracy: origin.accuracy || 15,
             });
             const backendRoute = sessionRes.route;
-            const coords = decodePolyline(backendRoute.polyline);
-            const steps = (backendRoute.steps || []).map((st, i) => ({
+            let coords = decodePolyline(backendRoute.polyline);
+            let steps = (backendRoute.steps || []).map((st, i) => ({
               id: i,
               instruction: st.instruction,
               distance: st.distanceText || formatDistance(st.distanceMeters || 0),
-              duration: "1 phút",
+              duration: st.durationText || "1 phút",
               name: st.name || "",
               rawDistance: st.distanceMeters || 0,
-              rawDuration: 60,
+              rawDuration: st.durationSeconds || 60,
               location: [st.lng || destination.lng, st.lat || destination.lat],
-              type: i === 0 ? "depart" : i === backendRoute.steps.length - 1 ? "arrive" : "continue",
+              type: st.type || (i === 0 ? "depart" : i === backendRoute.steps.length - 1 ? "arrive" : "continue"),
             }));
-            const summary = {
+            let summary = {
               totalDistance: backendRoute.distanceText,
               totalDuration: backendRoute.durationText,
               rawDistance: backendRoute.distanceMeters,
               rawDuration: backendRoute.durationSeconds,
             };
+
+            // Neu backend fallback sang duong thang 2 diem (internal_astar), goi OSRM de lay geometry bam sat duong pho thuc te
+            if (coords.length <= 2 || backendRoute.provider === "internal_astar") {
+              const osrmRoad = await fetchDirectOsrmRoute(origin, destination, mode);
+              if (osrmRoad) {
+                coords = osrmRoad.coords;
+                steps = osrmRoad.steps;
+                summary = osrmRoad.summary;
+              }
+            }
+
             const newRouteData = {
               coords,
               steps,
@@ -529,7 +594,7 @@ export default function useRouting() {
         return null;
       }
     },
-    [getUserLocation, transportMode, locationStatus, beginLiveGpsWatch]
+    [getUserLocation, transportMode, locationStatus, beginLiveGpsWatch, fetchDirectOsrmRoute]
   );
 
   const clearRoute = useCallback(() => {
