@@ -99,5 +99,37 @@ public class AdminPortalController {
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> adminListAiModels() {
         return ResponseEntity.ok(ApiResponse.success("OK", adminPortalService.adminListAiModels()));
     }
+
+    @PatchMapping("/admin/campaigns/{id}/status")
+    public ResponseEntity<ApiResponse<Object>> adminUpdateCampaignStatus(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> body) {
+        String st = adminPortalService.adminUpdateCampaignStatus(id, body);
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật chiến dịch quảng cáo: " + st, null));
+    }
+
+    @PatchMapping("/admin/reviews/{id}/status")
+    public ResponseEntity<ApiResponse<Object>> adminModerateReview(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> body) {
+        String st = adminPortalService.adminModerateReview(id, body);
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật trạng thái đánh giá: " + st, null));
+    }
+
+    @PatchMapping("/admin/routing-nodes/{id}")
+    public ResponseEntity<ApiResponse<Object>> adminUpdateRoutingNodeStatus(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> body) {
+        String st = adminPortalService.adminUpdateRoutingNodeStatus(id, body);
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật trạng thái cụm node định tuyến: " + st, null));
+    }
+
+    @PatchMapping("/admin/ai/models/{id}")
+    public ResponseEntity<ApiResponse<Object>> adminToggleAiModel(
+            @PathVariable Integer id,
+            @RequestBody Map<String, Object> body) {
+        adminPortalService.adminToggleAiModel(id, body);
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật cấu hình AI Model", null));
+    }
 }
 
