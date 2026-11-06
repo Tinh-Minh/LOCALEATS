@@ -10,10 +10,14 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -40,7 +44,10 @@ public class NavigationService {
     private static final String OSRM_BASE = "https://router.project-osrm.org/route/v1";
 
     private final NamedParameterJdbcTemplate jdbc;
-    private final RestClient http = RestClient.create();
+    private final HttpClient http = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(8))
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
     private final ObjectMapper mapper = new ObjectMapper();
 
     public NavigationService(NamedParameterJdbcTemplate jdbc) {
@@ -69,50 +76,77 @@ public class NavigationService {
     }
 
     /**
-     * Tinh toan tuyen duong (OSRM + fallback noi bo) va tra ve polyline, steps tieng Viet,
-     * khoang cach + thoi gian theo tung phuong tien (bike / car / walk).
+     * Tinh toan tuyen duong bam sat he thong duong giao thong thuc te (OSRM multi-node + fallback)
+     * va tra ve polyline, steps tieng Viet, khoang cach + thoi gian theo tung phuong tien (bike / car / walk).
      */
     public Map<String, Object> computeRoute(double originLat, double originLng,
                                             double destLat, double destLng,
                                             String mode) {
         String cleanMode = normalizeMode(mode);
         String profile = "walk".equals(cleanMode) ? "foot" : "driving";
+        String osmDeProfile = switch (cleanMode) {
+            case "walk" -> "routed-foot";
+            case "car" -> "routed-car";
+            default -> "routed-bike";
+        };
         long t0 = System.currentTimeMillis();
 
-        try {
-            String url = String.format(Locale.US,
-                    "%s/%s/%.6f,%.6f;%.6f,%.6f?overview=full&geometries=polyline&steps=true",
-                    OSRM_BASE, profile, originLng, originLat, destLng, destLat);
-            String body = http.get().uri(URI.create(url)).retrieve().body(String.class);
-            JsonNode root = mapper.readTree(body);
-            if ("Ok".equalsIgnoreCase(root.path("code").asText()) && root.path("routes").size() > 0) {
-                JsonNode route = root.path("routes").get(0);
-                double rawDist = route.path("distance").asDouble();
-                String polyline = route.path("geometry").asText("");
-                List<Map<String, Object>> steps = new ArrayList<>();
-                JsonNode legs = route.path("legs");
-                if (legs.size() > 0) {
-                    for (JsonNode st : legs.get(0).path("steps")) {
-                        double sd = st.path("distance").asDouble(0);
-                        if (sd < 3 && !"arrive".equals(st.path("maneuver").path("type").asText())) continue;
-                        Map<String, Object> item = new LinkedHashMap<>();
-                        item.put("instruction", translateManeuver(st));
-                        item.put("name", st.path("name").asText("Đường hiện tại"));
-                        item.put("distanceMeters", Math.round(sd));
-                        item.put("distanceText", formatDistance(sd));
-                        JsonNode loc = st.path("maneuver").path("location");
-                        if (loc.size() == 2) {
-                            item.put("lng", loc.get(0).asDouble());
-                            item.put("lat", loc.get(1).asDouble());
+        List<String> candidateUrls = List.of(
+                String.format(Locale.US,
+                        "%s/%s/%.6f,%.6f;%.6f,%.6f?overview=full&geometries=polyline&steps=true",
+                        OSRM_BASE, profile, originLng, originLat, destLng, destLat),
+                String.format(Locale.US,
+                        "https://routing.openstreetmap.de/%s/route/v1/driving/%.6f,%.6f;%.6f,%.6f?overview=full&geometries=polyline&steps=true",
+                        osmDeProfile, originLng, originLat, destLng, destLat)
+        );
+
+        for (String url : candidateUrls) {
+            try {
+                HttpRequest req = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .header("User-Agent", "LocalEats-Router/2.0 (EXE101)")
+                        .header("Accept", "application/json")
+                        .timeout(Duration.ofSeconds(8))
+                        .GET()
+                        .build();
+                HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                if (resp.statusCode() != 200) continue;
+
+                JsonNode root = mapper.readTree(resp.body());
+                if ("Ok".equalsIgnoreCase(root.path("code").asText()) && root.path("routes").size() > 0) {
+                    JsonNode route = root.path("routes").get(0);
+                    double rawDist = route.path("distance").asDouble();
+                    String polyline = route.path("geometry").asText("");
+                    List<Map<String, Object>> steps = new ArrayList<>();
+                    JsonNode legs = route.path("legs");
+                    if (legs.size() > 0) {
+                        for (JsonNode st : legs.get(0).path("steps")) {
+                            double sd = st.path("distance").asDouble(0);
+                            String mType = st.path("maneuver").path("type").asText("continue");
+                            if (sd < 3 && !"arrive".equals(mType) && !"depart".equals(mType)) continue;
+                            int stepDur = Math.max(5, (int) Math.round(st.path("duration").asDouble(15)));
+                            Map<String, Object> item = new LinkedHashMap<>();
+                            item.put("instruction", translateManeuver(st));
+                            item.put("name", st.path("name").asText("Đường hiện tại"));
+                            item.put("distanceMeters", Math.round(sd));
+                            item.put("distanceText", formatDistance(sd));
+                            item.put("durationSeconds", stepDur);
+                            item.put("durationText", formatDuration(stepDur));
+                            item.put("type", mType);
+                            JsonNode loc = st.path("maneuver").path("location");
+                            if (loc.size() == 2) {
+                                item.put("lng", loc.get(0).asDouble());
+                                item.put("lat", loc.get(1).asDouble());
+                            }
+                            steps.add(item);
                         }
-                        steps.add(item);
                     }
+                    long latency = System.currentTimeMillis() - t0;
+                    return buildRoutePayload(originLat, originLng, destLat, destLng, cleanMode, rawDist, polyline, steps, "osrm", latency);
                 }
-                long latency = System.currentTimeMillis() - t0;
-                return buildRoutePayload(originLat, originLng, destLat, destLng, cleanMode, rawDist, polyline, steps, "osrm", latency);
+            } catch (Exception e) {
+                log.warn("OSRM node {} error: {}", url, e.getMessage());
             }
-        } catch (Exception e) {
-            log.warn("OSRM fallback sang thuat toan A* noi bo: {}", e.getMessage());
         }
 
         // Fallback: tinh duong bang thuat toan noi bo (Haversine * 1.22 he so duong do thi)
